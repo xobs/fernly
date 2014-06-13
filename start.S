@@ -27,23 +27,3 @@ do_fiq:
 
 .text
 
-.global other
-other:
-	add r1, r2, r1
-	bx lr
-
-.global __start
-__start:
-	add r3, r2, r3
-	bx lr
-
-.global _start
-_start:
-	add r4, r3, r4
-	bx lr
-
-.global other2
-other2:
-	add r5, r4, r5
-	bx lr
-

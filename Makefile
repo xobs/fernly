@@ -10,7 +10,9 @@ LIBS =
 SRC_C = \
 	main.c \
 	vectors.c \
-	serial.c
+	serial.c \
+	utils.c \
+	bionic.c
 
 SRC_S = \
 	start.S
