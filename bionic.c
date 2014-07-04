@@ -239,7 +239,8 @@ done:
 #endif
 }
 
-static int _isspace(char c) {
+int _isspace(char c)
+{
 	return (c == ' '
 		|| c == '\f'
 		|| c == '\n'
@@ -248,20 +249,43 @@ static int _isspace(char c) {
 		|| c == '\v');
 }
 
-static int _isdigit(char c) {
+int _isdigit(char c)
+{
 	return (c >= '0' && c <= '9');
 }
 
-static int _isupper(char c) {
+int _isxdigit(char c)
+{
+	return ((c >= '0' && c <= '9') ||
+		(c >= 'a' && c <= 'f') ||
+		(c >= 'A' && c <= 'F'));
+}
+
+int _isupper(char c)
+{
 	return (c >= 'A' && c <= 'Z');
 }
 
-static int _islower(char c) {
+int _islower(char c)
+{
 	return (c >= 'a' && c <= 'z');
 }
 
-static int _isalpha(char c) {
+int _isalpha(char c)
+{
 	return _isupper(c) || _islower(c);
+}
+
+int _isalnum(char c)
+{
+	return _isalpha(c) || _isdigit(c);
+}
+
+int _toupper(char c)
+{
+	if (!_islower(c))
+		return c;
+	return c + ('a' - 'A');
 }
 
 static int get_cuts(int base, unsigned long *cutoff, int *cutlim)
@@ -661,3 +685,16 @@ void _memset(void *dst0, char val, size_t length)
 		*ptr++ = val;
 }
 
+int _strlen(const char *s)
+{
+	int i = 0;
+	while(s[i++]);
+	return i;
+}
+
+int _strnlen(const char *s, int maxlen)
+{
+	int i = 0;
+	while(s[i++] && i < maxlen);
+	return i;
+}

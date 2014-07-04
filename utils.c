@@ -61,3 +61,8 @@ int serial_print_hex(void *block, int count)
 	return serial_print_hex_offset(block, count, 0);
 }
 
+extern uint32_t __udiv64(uint32_t a, uint32_t b, uint32_t c);
+uint32_t _udiv64(uint64_t n, uint32_t d)
+{
+	return __udiv64(n >> 32, n, d);
+}

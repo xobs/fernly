@@ -1,7 +1,7 @@
 include mkenv.mk
 include magic.mk
 
-CFLAGS = -mtune=arm7tdmi -mcpu=arm7tdmi -mfloat-abi=soft -Wall \
+CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
 	 -O0 -ggdb -Iinclude
 
 LDFLAGS = --nostdlib -T fernvale.ld
@@ -12,7 +12,8 @@ SRC_C = \
 	vectors.c \
 	serial.c \
 	utils.c \
-	bionic.c
+	bionic.c \
+	vsprintf.c
 
 SRC_S = \
 	start.S

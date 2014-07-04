@@ -1,4 +1,6 @@
 .section vectors
+.global rv_start
+rv_start:
 	b	do_reset
 	b	do_undef
 	b	do_swi
@@ -9,21 +11,58 @@
 	b	do_fiq
 
 do_reset:
-	b	reset_handler
+	ldr	r0, =reset_handler
+	mov	pc, r0
+
 do_undef:
-	b	undef_handler
+	ldr	r0, =undef_handler
+	mov	pc, r0
+
 do_swi:
-	b	swi_handler
+	ldr	r0, =swi_handler
+	mov	pc, r0
+
 do_prefetch_abort:
-	b	prefetch_abort_handler
+	ldr	r0, =prefetch_abort_handler
+	mov	pc, r0
+
 do_data_abort:
-	b	data_abort_handler
+	ldr	r0, =data_abort_handler
+	mov	pc, r0
+
 do_reserved:
-	b	reserved_handler
+	ldr	r0, =reserved_handler
+	mov	pc, r0
+
 do_irq:
-	b	irq_handler
+	ldr	r0, =irq_handler
+	mov	pc, r0
+
 do_fiq:
-	b	fiq_handler
+	ldr	r0, =fiq_handler
+	mov	pc, r0
+
+.global rv_end
+rv_end:
 
 .text
 
+
+.global __udiv64
+
+__udiv64:
+	adds	r0,r0,r0
+	adc	r1,r1,r1
+
+	.rept 31
+		cmp	r1,r2
+		subcs	r1,r1,r2
+		adcs	r0,r0,r0
+		adc	r1,r1,r1
+	.endr
+
+	cmp	r1,r2
+	subcs	r1,r1,r2
+	adcs	r0,r0,r0
+
+	bx	lr
