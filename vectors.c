@@ -1,14 +1,14 @@
 #include "serial.h"
 #include "utils.h"
 
-/* Reset handler calls main() directly */
-/*
 void reset_handler(void) {
 	extern int main(int argc, char **argv);
+        serial_putc('<');
+	printf("Reset exception\n");
+        serial_putc('>');
 	main(1, 0);
 	return;
 }
-*/
 
 void undef_handler(void) {
 	printf("Undefined instruction exception\n");
