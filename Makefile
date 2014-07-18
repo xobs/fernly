@@ -2,7 +2,7 @@ include mkenv.mk
 include magic.mk
 
 CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
-	 -O0 -ggdb -Iinclude
+	 -Os -ggdb -Iinclude
 
 LDFLAGS = --nostdlib -T fernvale.ld
 LIBS =

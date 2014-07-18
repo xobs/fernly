@@ -685,6 +685,11 @@ void _memset(void *dst0, char val, size_t length)
 		*ptr++ = val;
 }
 
+void __aeabi_memset(void *dst0, char val, size_t length)
+{
+	_memset(dst0, val, length);
+}
+
 int _strlen(const char *s)
 {
 	int i = 0;
