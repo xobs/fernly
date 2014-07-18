@@ -1,12 +1,14 @@
 #include "serial.h"
 #include "utils.h"
 
+/* Reset handler calls main() directly */
+/*
 void reset_handler(void) {
 	extern int main(int argc, char **argv);
-	printf("Reset exception\n");
 	main(1, 0);
 	return;
 }
+*/
 
 void undef_handler(void) {
 	printf("Undefined instruction exception\n");
@@ -34,13 +36,11 @@ void reserved_handler(void) {
 }
 
 void irq_handler(void) {
-	while(1)
-		printf("Handled IRQ\n");
+	printf("Handled IRQ\n");
 	return;
 }
 
 void fiq_handler(void) {
-	while(1)
-		printf("Handled FIQ\n");
+	printf("Handled FIQ\n");
 	return;
 }

@@ -66,3 +66,16 @@ __udiv64:
 	adcs	r0,r0,r0
 
 	bx	lr
+
+.global ram_memcpy
+ram_memcpy: 
+	ldr	pc, =ram_memcpy_addr
+ram_memcpy_addr:
+        .long	0x70007388
+
+.global ram_bzero
+ram_bzero:
+	ldr	pc, =ram_bzero_addr
+ram_bzero_addr:
+        .long	0x700073bc
+
