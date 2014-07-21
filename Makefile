@@ -11,9 +11,7 @@ SRC_C = \
 	main.c \
 	vectors.c \
 	serial.c \
-	utils.c \
-	bionic.c \
-	vsprintf.c
+	utils.c
 
 SRC_S = \
 	start.S

@@ -23,7 +23,7 @@ clear_stack:
 
 # Copy 0x10000 bytes from =spi_offset to psram at 0x20000
 copy_code_to_ram:
-	mov	r0, #0x20000
+	ldr	r0, =0x00002000 // Source offset
 	ldr	r1, =0x10003460 // spi_offset
 	mov	r2, r1
 	mov	r3, #0x10000

@@ -66,3 +66,11 @@ uint32_t _udiv64(uint64_t n, uint32_t d)
 {
 	return __udiv64(n >> 32, n, d);
 }
+
+void _memcpy(void *dst0, void *_src, int length)
+{
+    uint8_t *ptr = dst0;
+    uint8_t *src = _src;
+      while(length--)
+            *ptr++ = *src++;
+}

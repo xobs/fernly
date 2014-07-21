@@ -51,102 +51,97 @@ static int list_registers(void)
 {
 	int var;
 
-	printf("Registers:\n");
+	serial_puts("Registers:\n");
 
-	printf("CPSR: ");
+	serial_puts("CPSR: ");
 	asm volatile ("mrs %0, cpsr":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("SPSR: ");
+	serial_puts("SPSR: ");
 	asm volatile ("mrs %0, spsr":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R0:   ");
+	serial_puts("R0:   ");
 	asm volatile ("mov %0, r0":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R1:   ");
+	serial_puts("R1:   ");
 	asm volatile ("mov %0, r1":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R2:   ");
+	serial_puts("R2:   ");
 	asm volatile ("mov %0, r2":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R3:   ");
+	serial_puts("R3:   ");
 	asm volatile ("mov %0, r3":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R4:   ");
+	serial_puts("R4:   ");
 	asm volatile ("mov %0, r4":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R5:   ");
+	serial_puts("R5:   ");
 	asm volatile ("mov %0, r5":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R6:   ");
+	serial_puts("R6:   ");
 	asm volatile ("mov %0, r6":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R7:   ");
+	serial_puts("R7:   ");
 	asm volatile ("mov %0, r7":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R8:   ");
+	serial_puts("R8:   ");
 	asm volatile ("mov %0, r8":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R9:   ");
+	serial_puts("R9:   ");
 	asm volatile ("mov %0, r9":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R10:  ");
+	serial_puts("R10:  ");
 	asm volatile ("mov %0, r10":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("FP:   ");
+	serial_puts("FP:   ");
 	asm volatile ("mov %0, r11":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("IP:   ");
+	serial_puts("IP:   ");
 	asm volatile ("mov %0, r12":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("SP:   ");
+	serial_puts("SP:   ");
 	asm volatile ("mov %0, r13":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R14:  ");
+	serial_puts("LR:  ");
 	asm volatile ("mov %0, r14":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
-	printf("R15:  ");
+	serial_puts("PC:  ");
 	asm volatile ("mov %0, r15":"=r" (var));
 	serial_puth(var, 8);
-	printf("\n");
-
-	printf("LR:   ");
-	asm volatile ("mov %0, lr":"=r" (var));
-	serial_puth(var, 8);
-	printf("\n");
+	serial_puts("\n");
 
 	return 0;
 }
@@ -156,11 +151,11 @@ static int enable_irq(void)
 	register int var;
 	asm volatile ("mrs %0, cpsr":"=r" (var));
 	if (!(var & 0x80)) {
-		printf("Interrupts already enabled\n");
+		serial_puts("Interrupts already enabled\n");
 		return -1;
 	}
 
-//	printf("Interrupts were disabled.  Re-enabling...\n");
+//	serial_puts("Interrupts were disabled.  Re-enabling...\n");
 	var &= ~0x80;
 	var &= ~0x1f;
 	var |= 0x10;
@@ -174,11 +169,11 @@ static int enable_fiq(void)
 	register int var;
 	asm volatile ("mrs %0, cpsr":"=r" (var));
 	if (!(var & 0x40)) {
-		printf("FIQ already enabled\n");
+		serial_puts("FIQ already enabled\n");
 		return -1;
 	}
 
-//	printf("FIQ was disabled.  Re-enabling...\n");
+//	serial_puts("FIQ was disabled.  Re-enabling...\n");
 	var &= ~0x40;
 	asm volatile ("msr cpsr, %0":"=r" (var));
 
@@ -199,13 +194,9 @@ static int do_init(void)
 	/* Disable WDT */
 	writel(0x2200, 0xa0030000);
 
-	printf("\n\nFernly shell\n");
+	serial_puts("\n\nFernly shell\n");
 
 	/* Copy exception vectors to address 0 */
-	printf("Copying vectors");
-	printf("   Src: %p", rv_start);
-	printf(" Src end: %p", rv_end);
-	printf(" Size: %d\n", rv_end - rv_start);
 	_memcpy((void *)0, rv_start, rv_end - rv_start);
 	enable_irq();
 	enable_fiq();
