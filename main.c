@@ -153,14 +153,14 @@ static int list_registers(void)
 
 static int enable_irq(void)
 {
-	int var;
+	register int var;
 	asm volatile ("mrs %0, cpsr":"=r" (var));
 	if (!(var & 0x80)) {
 		printf("Interrupts already enabled\n");
 		return -1;
 	}
 
-	printf("Interrupts were disabled.  Re-enabling...\n");
+//	printf("Interrupts were disabled.  Re-enabling...\n");
 	var &= ~0x80;
 	var &= ~0x1f;
 	var |= 0x10;
@@ -171,14 +171,14 @@ static int enable_irq(void)
 
 static int enable_fiq(void)
 {
-	int var;
+	register int var;
 	asm volatile ("mrs %0, cpsr":"=r" (var));
 	if (!(var & 0x40)) {
 		printf("FIQ already enabled\n");
 		return -1;
 	}
 
-	printf("FIQ was disabled.  Re-enabling...\n");
+//	printf("FIQ was disabled.  Re-enabling...\n");
 	var &= ~0x40;
 	asm volatile ("msr cpsr, %0":"=r" (var));
 
@@ -187,9 +187,8 @@ static int enable_fiq(void)
 
 static int do_init(void)
 {
-	void *rv_start = (void *)0x10003460;
-	void *rv_end = (void *)0x100034e0;
-	int i;
+	void *rv_start = (void *)0x88;
+	void *rv_end = (void *)0x88 + 256;
 
 	list_registers();
 	serial_init();
@@ -201,18 +200,15 @@ static int do_init(void)
 	writel(0x2200, 0xa0030000);
 
 	printf("\n\nFernly shell\n");
-#if 0
 
 	/* Copy exception vectors to address 0 */
 	printf("Copying vectors");
 	printf("   Src: %p", rv_start);
 	printf(" Src end: %p", rv_end);
 	printf(" Size: %d\n", rv_end - rv_start);
-	printf("(%d bytes from %p to 0)...\n", rv_end - rv_start, rv_start);
 	_memcpy((void *)0, rv_start, rv_end - rv_start);
 	enable_irq();
 	enable_fiq();
-#endif
 
 	return 0;
 }
@@ -248,9 +244,7 @@ static inline int get_hex(int bytes)
 int main(void)
 {
 	int buf;
-	int cmd;
 	int size;
-	int i;
 	uint32_t offset;
 	uint32_t value;
 	do_init();
@@ -320,6 +314,19 @@ int main(void)
 				value = get_hex(4);
 				writel(value, offset);
 				serial_puth(value, 8);
+			}
+			break;
+
+		case 'z': {
+			uint32_t start;
+			uint32_t end;
+
+			start = get_hex(4);
+			end = get_hex(4);
+			while (start < end) {
+				*((uint32_t *)start) = 0;
+				start += 4;
+			}
 			}
 			break;
 
