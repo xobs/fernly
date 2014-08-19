@@ -2,6 +2,82 @@
 #include "serial.h"
 #include "utils.h"
 #include "bionic.h"
+#include "printf.h"
+
+//#define AUTOMATED
+
+#if !defined(AUTOMATED)
+#define PROMPT "fernly> "
+
+static int serial_get_line(char *bfr, int len)
+{
+       int cur = 0;
+
+       while (cur < len) {
+               bfr[cur] = serial_getc();
+               serial_putc(bfr[cur]);
+
+               /* Carriage Return */
+               if (bfr[cur] == '\n') {
+                       bfr[cur] = '\0';
+                       return 0;
+               }
+
+               /* Linefeed */
+               else if (bfr[cur] == '\r') {
+                       bfr[cur] = '\0';
+                       return 0;
+               }
+
+               /* Backspace */
+               else if (bfr[cur] == 0x7f) {
+                       bfr[cur] = '\0';
+
+                       if (cur > 0) {
+                               serial_putc('\b');
+                               serial_putc(' ');
+                               serial_putc('\b');
+                               cur--;
+                       }
+               }
+
+               /* Ctrl-U */
+               else if (bfr[cur] == 0x15) {
+                       while (cur > 0) {
+                               serial_putc('\b');
+                               serial_putc(' ');
+                               serial_putc('\b');
+                               bfr[cur] = '\0';
+                               cur--;
+                       }
+               }
+
+               /* Ctrl-W */
+               else if (bfr[cur] == 0x17) {
+                       while (cur > 0 && bfr[cur] != ' ') {
+                               serial_putc('\b');
+                               serial_putc(' ');
+                               serial_putc('\b');
+                               bfr[cur] = '\0';
+                               cur--;
+                       }
+               }
+
+               /* Escape code */
+               else if (bfr[cur] == 0x1b) {
+                       /* Next two characters are escape codes */
+                       uint8_t next = serial_getc();
+                       /* Sanity check: next should be '[' */
+
+                       next = serial_getc();
+               }
+               else
+                       cur++;
+       }
+       bfr[len - 1] = '\0';
+       return -1;
+}
+#endif
 
 static inline void writeb(uint8_t value, uint32_t addr)
 {
@@ -39,13 +115,13 @@ static int wdt_kick(void)
 	writel(0x1971, 0xa0030008);
 	return 0;
 }
+*/
 
 static int wdt_reboot(void)
 {
 	writel(0x1209, 0xa003001c);
 	return 0;
 }
-*/
 
 static int list_registers(void)
 {
@@ -232,100 +308,208 @@ static inline int get_hex(int bytes)
 	return word;
 }
 
-int main(void)
+#ifdef AUTOMATED
+/* Protocol:
+ * Stream is byte-oriented.  The following commands are known:
+ *
+ * r - read an address
+ * w - write to an address
+ * z - zero-fill a region
+ *
+ * Responses:
+ *
+ * k - Ready for command
+ * ? - Unknown command
+ */
+static int loop(void)
 {
 	int buf;
 	int size;
 	uint32_t offset;
 	uint32_t value;
-	do_init();
 
-	/* Protocol:
-	   Stream is byte-oriented.  The following commands are known:
+	serial_putc('k');
+	buf = serial_getc();
 
-	   r - read an address
-	   w - write to an address
+	switch (buf) {
+	/* Read.  Format: r[otf]aaaaaaaa
+	   otf -> read One, Two, or Four bytes
+	   a.. -> address to read
+	   */
+	case 'r':
+		size = serial_getc();
+		if (size == 'o') {
+			offset = get_hex(4);
+			value = readb(offset);
+			serial_puth(value, 2);
+		}
+		else if (size == 't') {
+			offset = get_hex(4);
+			value = readw(offset);
+			serial_puth(value, 4);
+		}
+		else {
+			offset = get_hex(4);
+			value = readl(offset);
+			serial_puth(value, 8);
+		}
+		break;
 
-	   Responses:
+	/* Write.  Format: w[otf]aaaaaaaavvvvvvvv
+	   otf -> write One, Two, or Four bytes
+	   a.. -> address to write
+	   v.. -> value to write
+	   */
+	case 'w':
+		size = serial_getc();
+		if (size == 'o') {
+			offset = get_hex(4);
+			value = get_hex(1);
+			writeb(value, offset);
+			serial_puth(value, 2);
+		}
+		else if (size == 't') {
+			offset = get_hex(4);
+			value = get_hex(2);
+			writew(value, offset);
+			serial_puth(value, 4);
+		}
+		else {
+			offset = get_hex(4);
+			value = get_hex(4);
+			writel(value, offset);
+			serial_puth(value, 8);
+		}
+		break;
 
-	   k - Ready for command
-	   ? - Unknown command
-	*/
+	case 'z': {
+		uint32_t start;
+		uint32_t end;
 
+		start = get_hex(4);
+		end = get_hex(4);
+		while (start < end) {
+			*((uint32_t *)start) = 0;
+			start += 4;
+		}
+		}
+		break;
 
-	while (1) {
-		serial_putc('k');
-		buf = serial_getc();
+	default:
+		serial_putc('?');
+		break;
+	}
+	return 0;
+}
+#else /* AUTOMATED */
 
-		switch (buf) {
-		/* Read.  Format: r[otf]aaaaaaaa
-		   otf -> read One, Two, or Four bytes
-		   a.. -> address to read
-		   */
-		case 'r':
-			size = serial_getc();
-			if (size == 'o') {
-				offset = get_hex(4);
-				value = readb(offset);
-				serial_puth(value, 2);
-			}
-			else if (size == 't') {
-				offset = get_hex(4);
-				value = readw(offset);
-				serial_puth(value, 4);
-			}
-			else {
-				offset = get_hex(4);
-				value = readl(offset);
-				serial_puth(value, 8);
-			}
-			break;
+static int cmd_help(int argc, char **argv);
+static int cmd_reboot(int argc, char **argv);
+static int cmd_args(int argc, char **argv);
 
-		/* Write.  Format: w[otf]aaaaaaaavvvvvvvv
-		   otf -> write One, Two, or Four bytes
-		   a.. -> address to write
-		   v.. -> value to write
-		   */
-		case 'w':
-			size = serial_getc();
-			if (size == 'o') {
-				offset = get_hex(4);
-				value = get_hex(1);
-				writeb(value, offset);
-				serial_puth(value, 2);
-			}
-			else if (size == 't') {
-				offset = get_hex(4);
-				value = get_hex(2);
-				writew(value, offset);
-				serial_puth(value, 4);
-			}
-			else {
-				offset = get_hex(4);
-				value = get_hex(4);
-				writel(value, offset);
-				serial_puth(value, 8);
-			}
-			break;
+static struct {
+	int (*func)(int argc, char **argv);
+	const char *name;
+	const char *help;
+} commands[] = {
+	{
+		.func = cmd_help,
+		.name = "help",
+		.help = "Print help about available commands",
+	},
+	{
+		.func = cmd_reboot,
+		.name = "reboot",
+		.help = "Reboot Fernvale",
+	},
+	{
+		.func = cmd_args,
+		.name = "args",
+		.help = "Print contents of arc and argv",
+	},
+};
 
-		case 'z': {
-			uint32_t start;
-			uint32_t end;
+int cmd_help(int argc, char **argv)
+{
+	int i;
 
-			start = get_hex(4);
-			end = get_hex(4);
-			while (start < end) {
-				*((uint32_t *)start) = 0;
-				start += 4;
-			}
-			}
-			break;
+	for (i = 0; i < sizeof(commands) / sizeof(*commands); i++) {
+		serial_puts(commands[i].name);
+		serial_putc('\t');
+		serial_puts(commands[i].help);
+		serial_puts("\n");
+	}
+	return 0;
+}
 
-		default:
-			serial_putc('?');
+int cmd_args(int argc, char **argv)
+{
+	int i;
+	printf("argc: %d\n", argc);
+	for (i = 0; i < argc; i++) {
+		printf("argv[%d]: ", i);
+		serial_puts(argv[i]);
+		serial_puts("\n");
+	}
+
+	return 0;
+}
+
+int cmd_reboot(int argc, char **argv)
+{
+	printf("Rebooting...\n");
+	wdt_reboot();
+	while(1);
+	return 0;
+}
+
+static int shell_run_command(char *line)
+{
+	char *lp, *cmd, *tokp;
+	char *args[8];
+	int i, n;
+
+	lp = _strtok(line, " \t", &tokp);
+	cmd = lp;
+	n = 0;
+	while ((lp = _strtok(NULL, " \t", &tokp)) != NULL) {
+		if (n >= 7) {
+			printf("too many arguments\r\n");
+			cmd = NULL;
 			break;
 		}
+		args[n++] = lp;
 	}
+	args[n] = NULL;
+	if (cmd == NULL)
+		return -1;
+
+	for (i = 0; i < sizeof(commands) / sizeof(*commands); i++)
+		if (!_strcasecmp(commands[i].name, cmd))
+			return commands[i].func(n, args);
+
+	printf("Unknown command: %s\n", args[0]);
+
+	return 0;
+}
+
+static int loop(void)
+{
+	char line[256];
+
+	serial_puts(PROMPT);
+	serial_get_line(line, sizeof(line));
+	printf("\n");
+	return shell_run_command(line);
+}
+#endif
+
+int main(void)
+{
+	do_init();
+
+	while (1)
+		loop();
 
 	return 0;
 }
