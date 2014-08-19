@@ -104,9 +104,9 @@ uint8_t serial_getc(void)
 	return uart_getreg(UART_RBR);
 }
 
-int serial_puts(void *s)
+int serial_puts(const void *s)
 {
-	char *str = s;
+	const char *str = s;
 	while(*str) {
 		if (*str == '\n')
 			serial_putc('\r');

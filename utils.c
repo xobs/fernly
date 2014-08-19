@@ -28,11 +28,12 @@ void serial_puth(uint32_t pair, int digits)
 		serial_putc(HEX_CHARS[(pair >> 0) & 0xf]);
 }
 
-int serial_print_hex_offset(uint8_t *block, int count, int offset)
+int serial_print_hex_offset(const void *block, int count, int offset)
 {
 	int byte;
+	const uint8_t *b = block;
 	count += offset;
-	block -= offset;
+	b -= offset;
 	for ( ; offset < count; offset += 16) {
 		serial_puth(offset, 8);
 
@@ -41,22 +42,22 @@ int serial_print_hex_offset(uint8_t *block, int count, int offset)
 				serial_putc(' ');
 			serial_putc(' ');
 			if (offset + byte < count)
-				serial_puth(block[offset + byte] & 0xff, 2);
+				serial_puth(b[offset + byte] & 0xff, 2);
 			else
 				serial_puts("  ");
 		}
 
 		serial_puts("  |");
 		for (byte = 0; byte < 16 && byte + offset < count; byte++)
-			serial_putc(_isprint(block[offset + byte]) ?
-					block[offset + byte] :
+			serial_putc(_isprint(b[offset + byte]) ?
+					b[offset + byte] :
 					'.');
 			serial_puts("|\n");
 	}
 	return 0;
 }
 
-int serial_print_hex(void *block, int count)
+int serial_print_hex(const void *block, int count)
 {
 	return serial_print_hex_offset(block, count, 0);
 }
@@ -67,10 +68,3 @@ uint32_t _udiv64(uint64_t n, uint32_t d)
 	return __udiv64(n >> 32, n, d);
 }
 
-void _memcpy(void *dst0, void *_src, int length)
-{
-    uint8_t *ptr = dst0;
-    uint8_t *src = _src;
-      while(length--)
-            *ptr++ = *src++;
-}
