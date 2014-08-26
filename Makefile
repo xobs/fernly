@@ -8,14 +8,17 @@ LDFLAGS = --nostdlib -T fernvale.ld
 LIBS =
 
 SRC_C = \
-	main.c \
-	vectors.c \
-	serial.c \
 	bionic.c \
-	vsprintf.c \
-	utils.c
+	cmd-irq.c \
+	irq.c \
+	main.c \
+	serial.c \
+	utils.c \
+	vectors.c \
+	vsprintf.c
 
 SRC_S = \
+	irqasm.S \
 	start.S
 
 OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))

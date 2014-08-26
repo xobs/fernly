@@ -21,19 +21,21 @@ clear_stack:
 	mov	r0, #66
 	bl	uart_putc
 
-# Copy 0x10000 bytes from =spi_offset to psram at 0x20000
+# Copy 0x10000 bytes from =spi_offset to psram at 0x3460
 copy_code_to_ram:
-	ldr	r0, =0x00002000 // Source offset
-	ldr	r1, =0x10003460 // spi_offset
-	mov	r2, r1
-	mov	r3, #0x10000
-	add	r2, r2, r3
+	ldr	r0, =0x00003460 // Target offset
+	ldr	r1, =0x10003460 // Source offset
+	mov	r2, #0x10000
+	bl	asm_memcpy
 
-copy_code_to_ram_loop:
-	cmp	r1, r2
-	ldrcc	r3, [r1], #4
-	strcc	r3, [r0], #4
-	bcc	copy_code_to_ram_loop
+# Copy reset vector table to address 0
+copy_reset_vectors:
+	mov	r0, #0
+	ldr	r1, =0x3500
+	mov	r2, #0x100
+	bl	asm_memcpy
+	
+# Begin executing out of psram
 	
 # Jump to main, which ought to be in psram now
 jump_to_main:
@@ -42,6 +44,17 @@ jump_to_main:
 
 	ldr	r0, =reset_handler
 	mov	pc, r0
+
+asm_memcpy:
+	mov	r3, r1
+	add	r3, r3, r2
+
+asm_memcpy_loop:
+	cmp	r1, r3
+	ldrcc	r2, [r1], #4
+	strcc	r2, [r0], #4
+	bcc	asm_memcpy_loop
+	bx	lr
 
 uart_putc:
 	ldr	r2, =0xa0080014 // uart offset
@@ -55,46 +68,31 @@ uart_putc_ready_wait:
 
 .global rv_start
 rv_start:
-	b	do_reset
-	b	do_undef
-	b	do_swi
-	b	do_prefetch_abort
-	b	do_data_abort
-	b	do_reserved
-	b	do_irq
-	b	do_fiq
+	ldr	pc, .Lreset_handler
+	ldr	pc, .Lundef_handler
+	ldr	pc, .Lswi_handler
+	ldr	pc, .Lprefetch_abort_handler
+	ldr	pc, .Ldata_abort_handler
+	ldr	pc, .Lreserved_handler
+	ldr	pc, .Lirq_handler
+	ldr	pc, .Lfiq_handler
 
-do_reset:
-	ldr	r0, =reset_handler
-	mov	pc, r0
-
-do_undef:
-	ldr	r0, =undef_handler
-	mov	pc, r0
-
-do_swi:
-	ldr	r0, =swi_handler
-	mov	pc, r0
-
-do_prefetch_abort:
-	ldr	r0, =prefetch_abort_handler
-	mov	pc, r0
-
-do_data_abort:
-	ldr	r0, =data_abort_handler
-	mov	pc, r0
-
-do_reserved:
-	ldr	r0, =reserved_handler
-	mov	pc, r0
-
-do_irq:
-	ldr	r0, =irq_handler
-	mov	pc, r0
-
-do_fiq:
-	ldr	r0, =fiq_handler
-	mov	pc, r0
+.Lreset_handler:
+	.long	reset_handler
+.Lundef_handler:
+	.long	undef_handler
+.Lswi_handler:
+	.long	swi_handler
+.Lprefetch_abort_handler:
+	.long	prefetch_abort_handler
+.Ldata_abort_handler:
+	.long	data_abort_handler
+.Lreserved_handler:
+	.long	reserved_handler
+.Lirq_handler:
+	.long	irq_handler_c
+.Lfiq_handler:
+	.long	fiq_handler
 
 .global rv_end
 rv_end:
@@ -103,7 +101,6 @@ rv_end:
 
 
 .global __udiv64
-
 __udiv64:
 	adds	r0,r0,r0
 	adc	r1,r1,r1
@@ -136,4 +133,3 @@ ram_bzero:
 	mov	pc, r0
 ram_bzero_addr:
         .long	0x700073bc
-

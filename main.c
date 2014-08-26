@@ -1,8 +1,10 @@
 #include <string.h>
+#include "bionic.h"
+#include "memio.h"
+#include "irq.h"
+#include "printf.h"
 #include "serial.h"
 #include "utils.h"
-#include "bionic.h"
-#include "printf.h"
 
 //#define AUTOMATED
 
@@ -78,36 +80,6 @@ static int serial_get_line(char *bfr, int len)
        return -1;
 }
 #endif
-
-static inline void writeb(uint8_t value, uint32_t addr)
-{
-	*((volatile uint8_t *)addr) = value;
-}
-
-static inline uint8_t readb(uint32_t addr)
-{
-	return *(volatile uint8_t *)addr;
-}
-
-static inline void writew(uint16_t value, uint32_t addr)
-{
-	*((volatile uint16_t *)addr) = value;
-}
-
-static inline uint16_t readw(uint32_t addr)
-{
-	return *(volatile uint16_t *)addr;
-}
-
-static inline void writel(uint32_t value, uint32_t addr)
-{
-	*((volatile uint32_t *)addr) = value;
-}
-
-static inline uint32_t readl(uint32_t addr)
-{
-	return *(volatile uint32_t *)addr;
-}
 
 /*
 static int wdt_kick(void)
@@ -209,12 +181,12 @@ static int list_registers(void)
 	serial_puth(var, 8);
 	serial_puts("\n");
 
-	serial_puts("LR:  ");
+	serial_puts("LR:   ");
 	asm volatile ("mov %0, r14":"=r" (var));
 	serial_puth(var, 8);
 	serial_puts("\n");
 
-	serial_puts("PC:  ");
+	serial_puts("PC:   ");
 	asm volatile ("mov %0, r15":"=r" (var));
 	serial_puth(var, 8);
 	serial_puts("\n");
@@ -222,45 +194,8 @@ static int list_registers(void)
 	return 0;
 }
 
-static int enable_irq(void)
-{
-	register int var;
-	asm volatile ("mrs %0, cpsr":"=r" (var));
-	if (!(var & 0x80)) {
-		serial_puts("Interrupts already enabled\n");
-		return -1;
-	}
-
-//	serial_puts("Interrupts were disabled.  Re-enabling...\n");
-	var &= ~0x80;
-	var &= ~0x1f;
-	var |= 0x10;
-	asm volatile ("msr cpsr, %0":"=r" (var));
-
-	return 0;
-}
-
-static int enable_fiq(void)
-{
-	register int var;
-	asm volatile ("mrs %0, cpsr":"=r" (var));
-	if (!(var & 0x40)) {
-		serial_puts("FIQ already enabled\n");
-		return -1;
-	}
-
-//	serial_puts("FIQ was disabled.  Re-enabling...\n");
-	var &= ~0x40;
-	asm volatile ("msr cpsr, %0":"=r" (var));
-
-	return 0;
-}
-
 static int do_init(void)
 {
-	void *rv_start = (void *)0x88;
-	void *rv_end = (void *)0x88 + 256;
-
 	list_registers();
 	serial_init();
 
@@ -272,10 +207,8 @@ static int do_init(void)
 
 	serial_puts("\n\nFernly shell\n");
 
-	/* Copy exception vectors to address 0 */
-	_memcpy((void *)0, rv_start, rv_end - rv_start);
-	enable_irq();
-	enable_fiq();
+	irq_init();
+	fiq_init();
 
 	return 0;
 }
@@ -404,8 +337,11 @@ static int loop(void)
 #else /* AUTOMATED */
 
 static int cmd_help(int argc, char **argv);
+static int cmd_hex(int argc, char **argv);
+static int cmd_swi(int argc, char **argv);
 static int cmd_reboot(int argc, char **argv);
 static int cmd_args(int argc, char **argv);
+int cmd_irq(int argc, char **argv);
 
 static struct {
 	int (*func)(int argc, char **argv);
@@ -423,9 +359,24 @@ static struct {
 		.help = "Reboot Fernvale",
 	},
 	{
+		.func = cmd_hex,
+		.name = "hex",
+		.help = "Print area of memory as hex",
+	},
+	{
+		.func = cmd_irq,
+		.name = "irq",
+		.help = "Manipulate IRQs",
+	},
+	{
 		.func = cmd_args,
 		.name = "args",
 		.help = "Print contents of arc and argv",
+	},
+	{
+		.func = cmd_swi,
+		.name = "swi",
+		.help = "Generate software interrupt",
 	},
 };
 
@@ -433,7 +384,9 @@ int cmd_help(int argc, char **argv)
 {
 	int i;
 
+	printf("Fernly shell help.  Available commands:\n");
 	for (i = 0; i < sizeof(commands) / sizeof(*commands); i++) {
+		serial_putc('\t');
 		serial_puts(commands[i].name);
 		serial_putc('\t');
 		serial_puts(commands[i].help);
@@ -451,6 +404,33 @@ int cmd_args(int argc, char **argv)
 		serial_puts(argv[i]);
 		serial_puts("\n");
 	}
+
+	return 0;
+}
+
+int cmd_hex(int argc, char **argv)
+{
+	uint32_t offset;
+	int count = 0x200;
+	if (argc < 1) {
+		printf("Usage: hex [offset] [[count]]\n");
+		return -1;
+	}
+
+	offset = _strtoul(argv[0], NULL, 0);
+
+	if (argc > 1)
+		count = _strtoul(argv[1], NULL, 0);
+
+	serial_print_hex((const void *)offset, count);
+	return 0;
+}
+
+int cmd_swi(int argc, char **argv)
+{
+	printf("Generating SWI...\n");
+	asm volatile ("swi #0\n");
+	printf("Returned from SWI\n");
 
 	return 0;
 }
