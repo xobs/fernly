@@ -168,3 +168,45 @@ irq_handler:
         .size   irq_handler, . - irq_handler
         .align  5
 
+
+
+
+        .globl  swi_handler
+        .type   swi_handler, %function
+swi_handler:
+
+        /* Create a context structure.  First set aside a stack frame
+         * and store r0-r12 into the frame.
+         */
+
+        sub     sp, sp, #XCPTCONTEXT_SIZE
+        stmia   sp, {r0-r12}            /* Save the SVC mode regs */
+
+        /* Get the correct values of r13(sp), r14(lr), r15(pc)
+         * and CPSR in r1-r4 */
+
+        add     r1, sp, #XCPTCONTEXT_SIZE
+        mov     r2, r14                 /* R14 is altered on return from SWI */
+        mov     r3, r14                 /* Save r14 as the PC as well */
+        mrs     r4, spsr                /* Get the saved CPSR */
+
+        add     r0, sp, #(4*REG_SP)     /* Offset to pc, cpsr storage */
+        stmia   r0, {r1-r4}
+
+        /* Then call the SWI handler with interrupts disabled.
+         * void up_syscall(struct xcptcontext *xcp)
+         */
+
+        mov     fp, #0                  /* Init frame pointer */
+        mov     r0, sp                  /* Get r0=xcp */
+        /*bl      swi_handler_c*/           /* Call the handler */
+
+        /* Restore the CPSR, SVC mode registers and return */
+
+        ldr     r0, [sp, #(4*REG_CPSR)] /* Setup the SVC mode SPSR */
+        msr     spsr, r0
+        ldmia   sp, {r0-r15}^           /* Return */
+        .size   swi_handler, . - swi_handler
+
+        .align  5
+

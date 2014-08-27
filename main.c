@@ -6,7 +6,7 @@
 #include "serial.h"
 #include "utils.h"
 
-//#define AUTOMATED
+#define AUTOMATED
 
 #if !defined(AUTOMATED)
 #define PROMPT "fernly> "
@@ -286,6 +286,10 @@ static int loop(void)
 			value = readl(offset);
 			serial_puth(value, 8);
 		}
+		break;
+
+	case 'f':
+		size = get_hex(4);
 		break;
 
 	/* Write.  Format: w[otf]aaaaaaaavvvvvvvv

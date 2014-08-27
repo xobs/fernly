@@ -123,11 +123,14 @@ static void irq_dispatch_one(enum irq_number irq_num)
 
 void irq_dispatch(void)
 {
-	uint32_t reg = IRQ_BASE + IRQ_STATUS_OFF;
+	uint32_t reg;
 	uint32_t val;
 	int i;
 
+	printf("Dispatching IRQs...\n");
+	reg = IRQ_BASE + IRQ_STATUS_OFF;
 	val = readl(reg);
+	printf("Lower Mask: 0x%08x\n", val);
 
 	for (i = 0; i < 32; i++)
 		if (val & (1 << i))
@@ -135,7 +138,10 @@ void irq_dispatch(void)
 
 	reg += IRQ_BASE + IRQ_STATUS_OFF + 4;
 	val = readl(reg);
+	printf("Upper Mask: 0x%08x\n", val);
 	for (i = 0; i < (__irq_max__ - 32); i++)
 		if (val & (1 << i))
 			irq_dispatch_one(32 + i);
+
+	printf("Done dispatch\n");
 }

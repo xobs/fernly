@@ -13,7 +13,7 @@ void undef_handler(void) {
 	return;
 }
 
-void swi_handler(void) {
+void swi_handler_c(void) {
 	serial_puts("SWI exception\n");
 	return;
 }
@@ -38,8 +38,7 @@ void reserved_handler(void) {
 
 extern void irq_dispatch(void);
 void irq_handler_c(void) {
-	serial_puts("Handled IRQ\n");
-//	while(1);
+	serial_puts("Handling IRQ...\n");
 	irq_dispatch();
 	return;
 }
