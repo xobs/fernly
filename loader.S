@@ -15,6 +15,16 @@ clear_stack:
 
 	bl	wdt_disable
 
+clear_psram:
+  mov r0, #0
+  mov r1, #0x00800000
+	mov	r2, #0
+clear_psram_loop:
+	cmp	r1, r0
+	str	r2, [r0], #4
+	bcc	clear_psram_loop
+
+print_welcome_banner:
 	adr	r0, welcome_banner
 	bl	uart_puts
 
