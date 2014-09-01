@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <termios.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -33,7 +34,7 @@ int fernvale_banner(int fd) {
 			return 0;
 		printf("%c", b);
 		fflush(stdout);
-		if (b == '\r')
+		if (b == '\n')
 			printf("\t");
 	}
 	return -1;
@@ -52,8 +53,11 @@ int fernvale_print_line(int fd) {
 
 int main(int argc, char **argv) {
 	int serfd, binfd;
+	int ret;
 	struct stat stats;
 	int i;
+	int bytes_to_write;
+	struct termios t;
 	
 	if (argc != 2) {
 		printf("Usage: %s firmware.bin\n", argv[0]);
@@ -77,6 +81,22 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	printf("Setting serial port parameters... ");
+	fflush(stdout);
+	ret = tcgetattr(serfd, &t);
+	if (-1 == ret) {
+		perror("Failed to get attributes");
+		exit(1);
+	}
+	cfsetispeed(&t, B115200);
+	cfsetospeed(&t, B115200);
+	ret = tcsetattr(serfd, TCSANOW, &t);
+	if (-1 == ret) {
+		perror("Failed to set attributes");
+		exit(1);
+	}
+	printf("Ok.\n");
+
 	printf("Resetting Fernvale... ");
 	fflush(stdout);
 	fernvale_reset();
@@ -87,20 +107,23 @@ int main(int argc, char **argv) {
 	fernvale_banner(serfd);
 	printf("Ok.\n");
 
-	printf("Writing %d bytes...", (int)stats.st_size);
+	bytes_to_write = stats.st_size;
+	printf("Writing %d bytes...", bytes_to_write);
+	fflush(stdout);
+	bytes_to_write += 1; // Wait for us to hit 'enter'
 	{
 		uint8_t b;
 
-		b = stats.st_size & 0xff;
+		b = bytes_to_write & 0xff;
 		write(serfd, &b, 1);
 
-		b = stats.st_size >> 8 & 0xff;
+		b = bytes_to_write >> 8 & 0xff;
 		write(serfd, &b, 1);
 
-		b = stats.st_size >> 16 & 0xff;
+		b = bytes_to_write >> 16 & 0xff;
 		write(serfd, &b, 1);
 
-		b = stats.st_size >> 24 & 0xff;
+		b = bytes_to_write >> 24 & 0xff;
 		write(serfd, &b, 1);
 	}
 
@@ -118,8 +141,8 @@ int main(int argc, char **argv) {
 
 	printf(" Done.\n");
 
-	printf("Result: ");
-	fernvale_print_line(serfd);
+//	printf("Result: ");
+//	fernvale_print_line(serfd);
 
 	close(serfd);
 	close(binfd);
