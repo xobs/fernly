@@ -23,9 +23,18 @@ SRC_S = \
 
 OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
 
-all: $(BUILD)/firmware.bin
+all: $(BUILD)/firmware.bin $(BUILD)/loader.bin $(BUILD)/fernly-loader
 clean:
 	$(RM) -rf $(BUILD)
+
+$(BUILD)/fernly-loader: fernly-loader.c
+	$(CC) fernly-loader.c -o $@
+
+$(BUILD)/loader.bin: $(BUILD)/loader.o
+	objcopy -S -O binary $(BUILD)/loader.o $@
+
+$(BUILD)/loader.o: loader.S
+	as loader.S -o $@
 
 HEADER_BUILD = $(BUILD)/genhdr
 $(BUILD)/firmware.bin: $(BUILD)/firmware.elf
