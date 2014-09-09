@@ -6,7 +6,7 @@
 #include "serial.h"
 #include "utils.h"
 
-#define AUTOMATED
+//#define AUTOMATED
 
 #if !defined(AUTOMATED)
 #define PROMPT "fernly> "
@@ -342,6 +342,8 @@ static int loop(void)
 
 static int cmd_help(int argc, char **argv);
 static int cmd_hex(int argc, char **argv);
+static int cmd_peek(int argc, char **argv);
+static int cmd_poke(int argc, char **argv);
 static int cmd_swi(int argc, char **argv);
 static int cmd_reboot(int argc, char **argv);
 static int cmd_args(int argc, char **argv);
@@ -366,6 +368,16 @@ static struct {
 		.func = cmd_hex,
 		.name = "hex",
 		.help = "Print area of memory as hex",
+	},
+	{
+		.func = cmd_peek,
+		.name = "peek",
+		.help = "Look at one area of memory",
+	},
+	{
+		.func = cmd_poke,
+		.name = "poke",
+		.help = "Write a value to an area of memory",
 	},
 	{
 		.func = cmd_irq,
@@ -427,6 +439,43 @@ int cmd_hex(int argc, char **argv)
 		count = _strtoul(argv[1], NULL, 0);
 
 	serial_print_hex((const void *)offset, count);
+	return 0;
+}
+
+int cmd_peek(int argc, char **argv)
+{
+	uint32_t offset;
+	uint32_t val;
+
+	if (argc < 1) {
+		printf("Usage: peek [offset\n");
+		return -1;
+	}
+
+	offset = _strtoul(argv[0], NULL, 0);
+
+	printf("Value at 0x%08x: ", offset);
+	printf("0x%08x\n", *((volatile uint32_t *)offset));
+	return 0;
+}
+
+int cmd_poke(int argc, char **argv)
+{
+	uint32_t offset;
+	uint32_t val;
+
+	if (argc < 2) {
+		printf("Usage: poke [offset] [val]\n");
+		return -1;
+	}
+
+	offset = _strtoul(argv[0], NULL, 0);
+	val = _strtoul(argv[1], NULL, 0);
+
+	printf("Setting value at 0x%08x to 0x%08x: ", offset, val);
+	writel(val, offset);
+	printf("Ok\n");
+
 	return 0;
 }
 
