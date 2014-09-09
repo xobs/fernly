@@ -559,7 +559,7 @@ static int shell_run_command(char *line)
 		if (!_strcasecmp(commands[i].name, cmd))
 			return commands[i].func(n, args);
 
-	printf("Unknown command: %s\n", args[0]);
+	printf("Unknown command: %s\n", cmd);
 
 	return 0;
 }
