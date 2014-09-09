@@ -697,7 +697,7 @@ int _strlen(const char *s)
 	return i;
 }
 
-int _strnlen(const char *s, int maxlen)
+int _strnlen(const char *s, uint32_t maxlen)
 {
 	int i = 0;
 	while(s[i++] && i < maxlen);
