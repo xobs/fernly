@@ -18,7 +18,6 @@ SRC_C = \
 	vsprintf.c
 
 SRC_S = \
-	irqasm.S \
 	start.S
 
 OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
