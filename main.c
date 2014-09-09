@@ -4,6 +4,9 @@
 #include "printf.h"
 #include "serial.h"
 #include "utils.h"
+#include "scriptic.h"
+
+#include "fernvale-pmic.h"
 
 //#define AUTOMATED
 
@@ -193,33 +196,26 @@ static int list_registers(void)
 	return 0;
 }
 
-#define PMIC_BASE 0xa0700a00
-#define PMIC_CTRL0 (PMIC_BASE + 0x04)
-#define PMIC_CTRL1 (PMIC_BASE + 0x04)
-#define PMIC_CTRL2 (PMIC_BASE + 0x08)
-#define PMIC_CTRL3 (PMIC_BASE + 0x0c)
-#define PMIC_CTRL4 (PMIC_BASE + 0x10)
-#define PMIC_CTRL5 (PMIC_BASE + 0x14)
-#define PMIC_CTRL6 (PMIC_BASE + 0x18)
-#define PMIC_CTRL7 (PMIC_BASE + 0x1c)
-#define PMIC_CTRL8 (PMIC_BASE + 0x20)
-#define PMIC_CTRL9 (PMIC_BASE + 0x24)
-#define PMIC_CTRL10 (PMIC_BASE + 0x28)
-
 static int do_init(void)
 {
+	const struct scriptic *script;
+
 	list_registers();
 
 	/* Disable system watchdog */
 	writel(0x2200, 0xa0030000);
-
-
 
 	/* Enable USB Download mode (required for no-battery operation) */
 	writew(0x8000, PMIC_CTRL10);
 
 	/* Disable battery watchdog */
 	writew(0x2, PMIC_CTRL9);
+
+	script = scriptic_get("set_plls");
+	scriptic_execute(script);
+
+	script = scriptic_get("enable_psram");
+	scriptic_execute(script);
 
 	serial_puts("\n\nFernly shell\n");
 

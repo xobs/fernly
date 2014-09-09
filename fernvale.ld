@@ -39,7 +39,7 @@ SECTIONS
 {
 	/* The OS entry point is here */
 
-	. = 0x70000000; /* bootloader will copy data to this address */
+	. = 0x70006000; /* bootloader will copy data to this address */
 	.text : {
 		_stext = ABSOLUTE(.);
 		KEEP(*(vectors))

@@ -8,6 +8,10 @@ disable_interrupts:
 	orr	r0, r0, r1
 	msr	cpsr_cxsf, r0
 
+relocate_stack:
+        ldr     r0, =0x7000bffc // stack_start
+	mov     sp, r0
+
 print_welcome_banner:
 	adr	r0, welcome_banner
 	bl	uart_puts
@@ -25,6 +29,7 @@ load_program:
 # r0 contains the current offset to write to.
 # Load bytes from the serial port into RAM.
 	mov	r0, #0x70000000
+	orr	r0, r0, #0x6000
 	mvn	r2, #0
 	ldr	r3, =0xfff03639
 	blx	r3
@@ -33,6 +38,7 @@ jump_to_new_program:
 	adr	r0, launch_message
 	bl	uart_puts
 	mov	r0, #0x70000000
+	orr	r0, r0, #0x6000
 	mov	pc, r0
 
 .align	4

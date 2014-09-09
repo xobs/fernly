@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "serial.h"
+#include "printf.h"
 
 static inline int _isprint(char c)
 {
@@ -62,9 +63,41 @@ int serial_print_hex(const void *block, int count)
 	return serial_print_hex_offset(block, count, 0);
 }
 
-extern uint32_t __udiv64(uint32_t a, uint32_t b, uint32_t c);
-uint32_t _udiv64(uint64_t n, uint32_t d)
+uint32_t __div64_32(uint64_t *n, uint32_t base)
 {
-	return __udiv64(n >> 32, n, d);
+	uint64_t rem = *n;
+	uint64_t b = base;
+	uint64_t res, d = 1;
+	uint32_t high = rem >> 32;
+
+	/* Reduce the thing a bit first */
+	res = 0;
+	if (high >= base) {
+		high /= base;
+		res = (uint64_t) high << 32;
+		rem -= (uint64_t) (high*base) << 32;
+	}
+
+	while ((int64_t)b > 0 && b < rem) {
+		b = b+b;
+		d = d+d;
+	}
+
+	do {
+		if (rem >= b) {
+			rem -= b;
+			res += d;
+		}
+		b >>= 1;
+		d >>= 1;
+	} while (d);
+
+	*n = res;
+	return rem;
 }
 
+void __div0 (void)
+{
+	printf("Division by 0.  Hanging.\n");
+	while(1);
+}

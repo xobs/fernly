@@ -11,6 +11,7 @@ LIBS =
 SRC_C = \
 	bionic.c \
 	cmd-irq.c \
+	emi.c \
 	irq.c \
 	main.c \
 	scriptic.c \
