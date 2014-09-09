@@ -2,11 +2,6 @@
 
 .global reset
 reset:
-	mov	r0, #48
-	bl	uart_putc
-	mov	r0, #49
-	bl	uart_putc
-
 	ldr	r0, =0x7000cffc // stack_start
 	mov	sp, r0
 	mov	r2, #0xffffffff
@@ -18,30 +13,24 @@ clear_stack:
 	sub	r0, r0, #4
 	bcc	clear_stack
 
-	mov	r0, #66
-	bl	uart_putc
-
-# Copy 0x10000 bytes from =spi_offset to psram at 0x3460
-copy_code_to_ram:
-	ldr	r0, =0x00003460 // Target offset
-	ldr	r1, =0x10003460 // Source offset
-	mov	r2, #0x10000
-	bl	asm_memcpy
-
-# Copy reset vector table to address 0
-copy_reset_vectors:
-	mov	r0, #0
-	ldr	r1, =0x3500
-	mov	r2, #0x100
-	bl	asm_memcpy
+## Copy 0x10000 bytes from =spi_offset to psram at 0x3460
+#copy_code_to_ram:
+#	ldr	r0, =0x00003460 // Target offset
+#	ldr	r1, =0x10003460 // Source offset
+#	mov	r2, #0x10000
+#	bl	asm_memcpy
+#
+## Copy reset vector table to address 0
+#copy_reset_vectors:
+#	mov	r0, #0
+#	ldr	r1, =0x3500
+#	mov	r2, #0x100
+#	bl	asm_memcpy
 	
 # Begin executing out of psram
 	
 # Jump to main, which ought to be in psram now
 jump_to_main:
-	mov	r0, #69
-	bl	uart_putc
-
 	ldr	r0, =reset_handler
 	mov	pc, r0
 
@@ -90,7 +79,7 @@ rv_start:
 .Lreserved_handler:
 	.long	reserved_handler
 .Lirq_handler:
-	.long	irq_handler_c
+	.long	irq_handler
 .Lfiq_handler:
 	.long	fiq_handler
 
