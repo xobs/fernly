@@ -1,6 +1,10 @@
 #include <stdint.h>
 #include "serial.h"
 
+#define PUTS_HANDLE_NEWLINE
+#define SERIAL_USB
+
+#ifdef SERIAL_UART
 
 #define UART_IS_DLL 0x100
 #define UART_IS_LCR 0x200
@@ -141,3 +145,47 @@ void serial_init(void)
 	/* Pause a while */
 	for (tmp=0; tmp<0xff; tmp++);
 }
+#else /* SERIAL_USB */
+
+static void (*rom_usb_read)(void *data, int bytes, int timeout) = (void *)0xfff03639;
+static void (*rom_usb_write)(const void *data, int bytes, int timeout) = (void *)0xfff03653;
+static void (*rom_usb_flush)(void) = (void *)0xfff04845;
+
+int serial_putc(uint8_t c)
+{
+	if (c == '\n')
+		serial_putc('\r');
+	rom_usb_write(&c, 1, -1);
+	rom_usb_flush();
+	return 0;
+}
+
+uint8_t serial_getc(void)
+{
+	uint8_t bfr;
+	rom_usb_read(&bfr, 1, -1);
+	return bfr;
+}
+
+int serial_puts(const void *s)
+{
+#ifdef PUTS_HANDLE_NEWLINE
+	const char *str = s;
+	while(*str) {
+		if (*str == '\n')
+			serial_putc('\r');
+		serial_putc(*str++);
+	}
+#else
+	uint32_t len = _strlen(s);
+	rom_usb_write(s, len, -1);
+	rom_usb_flush();
+#endif
+	return 0;
+}
+
+void serial_init(void)
+{
+}
+
+#endif /* UART */
