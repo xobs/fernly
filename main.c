@@ -1,7 +1,6 @@
 #include <string.h>
 #include "bionic.h"
 #include "memio.h"
-#include "irq.h"
 #include "printf.h"
 #include "serial.h"
 #include "utils.h"
@@ -197,7 +196,6 @@ static int list_registers(void)
 static int do_init(void)
 {
 	list_registers();
-	serial_init();
 
 	/* Kick WDT */
 	writel(0x1971, 0xa0030008);
@@ -206,9 +204,6 @@ static int do_init(void)
 	writel(0x2200, 0xa0030000);
 
 	serial_puts("\n\nFernly shell\n");
-
-	irq_init();
-	fiq_init();
 
 	return 0;
 }
@@ -349,7 +344,7 @@ static int cmd_reboot(int argc, char **argv);
 static int cmd_args(int argc, char **argv);
 int cmd_irq(int argc, char **argv);
 
-static struct {
+static const struct {
 	int (*func)(int argc, char **argv);
 	const char *name;
 	const char *help;
@@ -445,10 +440,9 @@ int cmd_hex(int argc, char **argv)
 int cmd_peek(int argc, char **argv)
 {
 	uint32_t offset;
-	uint32_t val;
 
 	if (argc < 1) {
-		printf("Usage: peek [offset\n");
+		printf("Usage: peek [offset]\n");
 		return -1;
 	}
 
