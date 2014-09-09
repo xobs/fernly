@@ -264,7 +264,6 @@ static noinline char* put_dec(char *buf, unsigned NUM_TYPE num)
 #define SMALL	32		/* Must be 32 == 0x20 */
 #define SPECIAL	64		/* 0x */
 
-#ifdef CONFIG_SYS_VSNPRINTF
 /*
  * Macro to add a new character to our output string, but only if it will
  * fit. The macro moves to the next character position in the output string.
@@ -274,9 +273,6 @@ static noinline char* put_dec(char *buf, unsigned NUM_TYPE num)
 		*(str) = (ch); \
 	++str; \
 	} while (0)
-#else
-#define ADDCH(str, ch)	(*(str)++ = (ch))
-#endif
 
 static char *number(char *buf, char *end, unsigned NUM_TYPE num,
 		int base, int size, int precision, int type)
@@ -379,9 +375,9 @@ static char *string(char *buf, char *end, char *s, int field_width,
 	int len, i;
 
 	if (s == 0)
-		s = "<NULL>";
+		s = "(null)";
 
-	len = _strnlen(s, precision);
+	len = _strnlen(s, precision) - 1;
 
 	if (!(flags & LEFT))
 		while (len < field_width--)
@@ -528,13 +524,6 @@ static int vsnprintf_internal(char *buf, size_t size, const char *fmt,
 				/* 't' added for ptrdiff_t */
 	char *end = buf + size;
 
-#ifdef CONFIG_SYS_VSNPRINTF
-	/* Make sure end is always >= buf - do we want this in U-Boot? */
-	if (end < buf) {
-		end = ((void *)-1);
-		size = end - buf;
-	}
-#endif
 	str = buf;
 
 	for (; *fmt ; ++fmt) {
@@ -686,20 +675,15 @@ static int vsnprintf_internal(char *buf, size_t size, const char *fmt,
 			     flags);
 	}
 
-#ifdef CONFIG_SYS_VSNPRINTF
 	if (size > 0) {
 		ADDCH(str, '\0');
 		if (str > end)
 			end[-1] = '\0';
 	}
-#else
-	*str = '\0';
-#endif
 	/* the trailing null byte doesn't count towards the total */
 	return str-buf;
 }
 
-#ifdef CONFIG_SYS_VSNPRINTF
 int vsnprintf(char *buf, size_t size, const char *fmt,
 			      va_list args)
 {
@@ -712,7 +696,7 @@ int vscnprintf(char *buf, size_t size, const char *fmt, va_list args)
 
 	i = vsnprintf(buf, size, fmt, args);
 
-	if (likely(i < size))
+	if (i < size)
 		return i;
 	if (size != 0)
 		return size - 1;
@@ -742,7 +726,6 @@ int scnprintf(char *buf, size_t size, const char *fmt, ...)
 
 	return i;
 }
-#endif /* CONFIG_SYS_VSNPRINT */
 
 /**
  * Format a string and place it in a buffer (va_list version)
@@ -768,10 +751,12 @@ int sprintf(char * buf, const char *fmt, ...)
 	int i;
 
 	va_start(args, fmt);
-	i=vsprintf(buf,fmt,args);
+	i = vsprintf(buf,fmt,args);
 	va_end(args);
 	return i;
 }
+
+extern void serial_puts(const char *bfr);
 
 int printf(const char *fmt, ...)
 {
@@ -783,6 +768,7 @@ int printf(const char *fmt, ...)
 	i = vsnprintf_internal(printbuffer, sizeof(printbuffer), fmt, args);
 	va_end(args);
 	serial_puts(printbuffer);
+
 	return i;
 }
 
