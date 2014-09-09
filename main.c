@@ -360,6 +360,7 @@ static int cmd_poke(int argc, char **argv);
 static int cmd_swi(int argc, char **argv);
 static int cmd_reboot(int argc, char **argv);
 static int cmd_args(int argc, char **argv);
+static int cmd_msleep(int argc, char **argv);
 int cmd_irq(int argc, char **argv);
 
 static const struct {
@@ -376,6 +377,11 @@ static const struct {
 		.func = cmd_reboot,
 		.name = "reboot",
 		.help = "Reboot Fernvale",
+	},
+	{
+		.func = cmd_msleep,
+		.name = "msleep",
+		.help = "Sleep for some number of milliseconds",
 	},
 	{
 		.func = cmd_hex,
@@ -421,6 +427,26 @@ int cmd_help(int argc, char **argv)
 		serial_puts(commands[i].help);
 		serial_puts("\n");
 	}
+	return 0;
+}
+
+int cmd_msleep(int argc, char **argv)
+{
+	unsigned int msecs, i, j;
+
+	if (argc != 1) {
+		printf("Usage: msleep [milliseconds]\n");
+		return 1;
+	}
+
+	msecs = _strtoul(argv[0], NULL, 0);
+
+	for (i = 0; i < msecs; i++) {
+		for (j = 0; j < 65000; j++) {
+			asm("nop");
+		}
+	}
+
 	return 0;
 }
 
