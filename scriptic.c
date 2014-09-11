@@ -3,6 +3,8 @@
 #include "bionic.h"
 #include "memio.h"
 
+#define SCRIPTIC_DEBUG /* Enable this to print commands as they're executed */
+
 extern struct scriptic set_plls;
 extern struct scriptic enable_psram;
 
@@ -10,6 +12,86 @@ static struct scriptic *scripts[] = {
 	&set_plls,
 	&enable_psram,
 };
+
+#ifdef SCRIPTIC_DEBUG
+static const char *command_names[] = {
+	"end",
+	"read32",
+	"write32",
+	"read16",
+	"write16",
+	"call",
+	"usleep",
+};
+
+static void sc_print_header(void *p)
+{
+	union scriptic_command *cmd = p;
+
+	printf("> %s command", command_names[cmd->header.command]);
+	switch(cmd->header.command) {
+	case sc_end_cmd:
+		break;
+
+	case sc_read32_cmd:
+		if (cmd->read32.mask == 0 || cmd->read32.mask == 0xffffffff)
+			printf(" read32 @ 0x%08x", cmd->read32.addr);
+		else
+			printf(" read32 @ 0x%08x, mask 0x%08x, match 0x%008x",
+				cmd->read32.addr,
+				cmd->read32.mask,
+				cmd->read32.match);
+		break;
+
+	case sc_read16_cmd:
+		if (cmd->read16.mask == 0 || cmd->read16.mask == 0xffff)
+			printf(" read16 @ 0x%08x", cmd->read16.addr);
+		else
+			printf(" read16 @ 0x%08x, mask 0x%04x, match 0x%004x",
+				cmd->read16.addr,
+				cmd->read16.mask,
+				cmd->read16.match);
+		break;
+
+	case sc_write32_cmd:
+		if (cmd->write32.mask == 0 || cmd->write32.mask == 0xffffffff)
+			printf(" write32 0x%08x @ 0x%08x",
+					cmd->write32.value, cmd->write32.addr);
+		else
+			printf(" write32 0x%08x (mask 0x%08x) @ 0x%08x",
+					cmd->write32.value,
+					cmd->write32.mask,
+					cmd->write32.addr);
+		break;
+
+	case sc_write16_cmd:
+		if (cmd->write16.mask == 0 || cmd->write16.mask == 0xffff)
+			printf(" write16 0x%04x @ 0x%08x",
+					cmd->write16.value, cmd->write16.addr);
+		else
+			printf(" write16 0x%04x (mask 0x%04x) @ 0x%08x",
+					cmd->write16.value,
+					cmd->write16.mask,
+					cmd->write16.addr);
+		break;
+
+	case sc_call_cmd:
+		printf(" call function @ 0x%08x with arg 0x%08x",
+				(uint32_t)cmd->call.func,
+				(uint32_t)cmd->call.opaque);
+		break;
+
+	case sc_usleep_cmd:
+		printf(" usleep for %d usecs", cmd->usleep.usecs);
+		break;
+
+	default:
+		printf(" unrecognized command");
+	}
+
+	printf("\n");
+}
+#endif /* SCRIPTIC_DEBUG */
 
 static int sc_header_command(struct scriptic_header *header)
 {
@@ -128,11 +210,21 @@ int scriptic_execute(const struct scriptic *script)
 {
 	void *header;
 
-	if (!script)
+	if (!script) {
+#ifdef SCRIPTIC_DEBUG
+		printf("scriptic: Tried to execute a NULL script\n");
+#endif
 		return -1;
+	}
 
 	header = (struct scriptic_header *)&script[1];
 
+#ifdef SCRIPTIC_DEBUG
+	printf("Executing script \"%s\", v %d.%d.%d\n",
+			script->name,
+			script->ver_major, script->ver_minor, script->ver_rev);
+	sc_print_header(header);
+#endif /* SCRIPTIC_DEBUG */
 	while (sc_header_command(header) != sc_end_cmd) {
 		switch(sc_header_command(header)) {
 		case sc_end_cmd:
@@ -167,6 +259,9 @@ int scriptic_execute(const struct scriptic *script)
 		}
 
 		header = sc_next_command(header);
+#ifdef SCRIPTIC_DEBUG
+		sc_print_header(header);
+#endif /* SCRIPTIC_DEBUG */
 	}
 
 	return 0;
@@ -195,7 +290,11 @@ int scriptic_run(const char *name)
 	const struct scriptic *script;
 
 	script = scriptic_get(name);
-	if (!script)
+	if (!script) {
+#ifdef SCRIPTIC_DEBUG
+		printf("scriptic: Unrecognized script name: %s\n", name);
+#endif
 		return -1;
+	}
 	return scriptic_execute(script);
 }

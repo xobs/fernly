@@ -153,6 +153,17 @@ struct scriptic_usleep {
 	uint32_t		 usecs;		/* Number of microseconds */
 } __attribute__((__packed__));
 
+union scriptic_command {
+	struct scriptic_header	header;
+	struct scriptic_end	end;
+	struct scriptic_read32	read32;
+	struct scriptic_write32	write32;
+	struct scriptic_read16	read16;
+	struct scriptic_write16	write16;
+	struct scriptic_call	call;
+	struct scriptic_usleep	usleep;
+};
+
 struct scriptic {
 	const char 	 	name[16];
 	uint8_t		 	ver_major;
