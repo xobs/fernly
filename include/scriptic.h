@@ -163,7 +163,7 @@ struct scriptic {
 
 int scriptic_execute(const struct scriptic *script);
 const struct scriptic *scriptic_get(const char *name);
-
+int scriptic_run(const char *name);
 
 #endif /* __ASSEMBLY__ */
 

@@ -6,6 +6,11 @@
 extern struct scriptic set_plls;
 extern struct scriptic enable_psram;
 
+static struct scriptic *scripts[] = {
+	&set_plls,
+	&enable_psram,
+};
+
 static int sc_header_command(struct scriptic_header *header)
 {
 	return header->command;
@@ -170,14 +175,27 @@ int scriptic_execute(const struct scriptic *script)
 const struct scriptic *scriptic_get(const char *name)
 {
 	struct scriptic *script = NULL;
+	int i;
 
-	if (!_strcasecmp(name, "set_plls"))
-		script = &set_plls;
-	else if (!_strcasecmp(name, "enable_psram"))
-		script = &enable_psram;
+	for (i = 0; i < sizeof(scripts) / sizeof(*scripts); i++) {
+		if (!_strcasecmp(name, scripts[i]->name)) {
+			script = scripts[i];
+			break;
+		}
+	}
 
 	if (script && script->command_count == 0)
 		script->command_count = sc_command_count(script);
 
 	return script;
+}
+
+int scriptic_run(const char *name)
+{
+	const struct scriptic *script;
+
+	script = scriptic_get(name);
+	if (!script)
+		return -1;
+	return scriptic_execute(script);
 }
