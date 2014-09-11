@@ -50,3 +50,12 @@ int cmd_irq(int argc, char **argv)
 
 	return 0;
 }
+
+int cmd_swi(int argc, char **argv)
+{
+	printf("Generating SWI...\n");
+	asm volatile ("swi #0\n");
+	printf("Returned from SWI\n");
+
+	return 0;
+}

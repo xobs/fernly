@@ -83,20 +83,6 @@ static int serial_get_line(char *bfr, int len)
 }
 #endif
 
-/*
-static int wdt_kick(void)
-{
-	writel(0x1971, 0xa0030008);
-	return 0;
-}
-*/
-
-static int wdt_reboot(void)
-{
-	writel(0x1209, 0xa003001c);
-	return 0;
-}
-
 static int list_registers(void)
 {
 	int var;
@@ -350,14 +336,13 @@ static int loop(void)
 #else /* AUTOMATED */
 
 static int cmd_help(int argc, char **argv);
-static int cmd_hex(int argc, char **argv);
-static int cmd_peek(int argc, char **argv);
-static int cmd_poke(int argc, char **argv);
-static int cmd_swi(int argc, char **argv);
-static int cmd_reboot(int argc, char **argv);
-static int cmd_args(int argc, char **argv);
-static int cmd_msleep(int argc, char **argv);
-int cmd_irq(int argc, char **argv);
+extern int cmd_hex(int argc, char **argv);
+extern int cmd_peek(int argc, char **argv);
+extern int cmd_poke(int argc, char **argv);
+extern int cmd_swi(int argc, char **argv);
+extern int cmd_reboot(int argc, char **argv);
+extern int cmd_msleep(int argc, char **argv);
+extern int cmd_irq(int argc, char **argv);
 
 static const struct {
 	int (*func)(int argc, char **argv);
@@ -400,11 +385,6 @@ static const struct {
 		.help = "Manipulate IRQs",
 	},
 	{
-		.func = cmd_args,
-		.name = "args",
-		.help = "Print contents of arc and argv",
-	},
-	{
 		.func = cmd_swi,
 		.name = "swi",
 		.help = "Generate software interrupt",
@@ -423,110 +403,6 @@ int cmd_help(int argc, char **argv)
 		serial_puts(commands[i].help);
 		serial_puts("\n");
 	}
-	return 0;
-}
-
-int cmd_msleep(int argc, char **argv)
-{
-	unsigned int msecs, i, j;
-
-	if (argc != 1) {
-		printf("Usage: msleep [milliseconds]\n");
-		return 1;
-	}
-
-	msecs = _strtoul(argv[0], NULL, 0);
-
-	for (i = 0; i < msecs; i++) {
-		for (j = 0; j < 65000; j++) {
-			asm("nop");
-		}
-	}
-
-	return 0;
-}
-
-int cmd_args(int argc, char **argv)
-{
-	int i;
-	printf("argc: %d\n", argc);
-	for (i = 0; i < argc; i++) {
-		printf("argv[%d]: ", i);
-		serial_puts(argv[i]);
-		serial_puts("\n");
-	}
-
-	return 0;
-}
-
-int cmd_hex(int argc, char **argv)
-{
-	uint32_t offset;
-	int count = 0x200;
-	if (argc < 1) {
-		printf("Usage: hex [offset] [[count]]\n");
-		return -1;
-	}
-
-	offset = _strtoul(argv[0], NULL, 0);
-
-	if (argc > 1)
-		count = _strtoul(argv[1], NULL, 0);
-
-	serial_print_hex((const void *)offset, count);
-	return 0;
-}
-
-int cmd_peek(int argc, char **argv)
-{
-	uint32_t offset;
-
-	if (argc < 1) {
-		printf("Usage: peek [offset]\n");
-		return -1;
-	}
-
-	offset = _strtoul(argv[0], NULL, 0);
-
-	printf("Value at 0x%08x: ", offset);
-	printf("0x%08x\n", *((volatile uint32_t *)offset));
-	return 0;
-}
-
-int cmd_poke(int argc, char **argv)
-{
-	uint32_t offset;
-	uint32_t val;
-
-	if (argc < 2) {
-		printf("Usage: poke [offset] [val]\n");
-		return -1;
-	}
-
-	offset = _strtoul(argv[0], NULL, 0);
-	val = _strtoul(argv[1], NULL, 0);
-
-	printf("Setting value at 0x%08x to 0x%08x: ", offset, val);
-	writel(val, offset);
-	printf("Ok\n");
-
-	return 0;
-}
-
-int cmd_swi(int argc, char **argv)
-{
-	printf("Generating SWI...\n");
-	asm volatile ("swi #0\n");
-	printf("Returned from SWI\n");
-
-	return 0;
-}
-
-int cmd_reboot(int argc, char **argv)
-{
-	printf("Rebooting...\n");
-	wdt_reboot();
-	while(1);
 	return 0;
 }
 

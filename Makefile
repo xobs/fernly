@@ -10,7 +10,11 @@ LIBS =
 
 SRC_C = \
 	bionic.c \
+	cmd-hex.c \
 	cmd-irq.c \
+	cmd-peekpoke.c \
+	cmd-reboot.c \
+	cmd-sleep.c \
 	emi.c \
 	irq.c \
 	main.c \
