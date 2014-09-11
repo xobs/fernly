@@ -251,7 +251,7 @@ static noinline char* put_dec(char *buf, unsigned NUM_TYPE num)
 		unsigned rem;
 		if (num < 100000)
 			return put_dec_trunc(buf, num);
-		rem = _udiv64(num, 100000);
+		rem = do_div(num, 100000);
 		buf = put_dec_full(buf, rem);
 	}
 }

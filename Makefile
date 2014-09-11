@@ -3,6 +3,7 @@ include magic.mk
 
 CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
 	 -Os -ggdb -Iinclude
+AFLAGS = -D__ASSEMBLY__
 
 LDFLAGS = --nostdlib -T fernvale.ld
 LIBS =
@@ -12,12 +13,17 @@ SRC_C = \
 	cmd-irq.c \
 	irq.c \
 	main.c \
+	scriptic.c \
 	serial.c \
 	utils.c \
 	vectors.c \
 	vsprintf.c
 
 SRC_S = \
+	scriptic/set-plls.S \
+	scriptic/enable-psram.S \
+	_udivsi3.S \
+	_divsi3.S \
 	start.S
 
 OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
@@ -52,9 +58,9 @@ $(OBJ): $(HEADER_BUILD)/generated.h | $(OBJ_DIRS)
 $(HEADER_BUILD)/generated.h: | $(HEADER_BUILD)
 	  touch $@
 
-OBJ_DIRS = $(sort $(dir $(OBJ)))
+OBJ_DIRS = $(sort $(dir $(OBJ))) scriptic
 $(OBJ_DIRS):
-	$(MKDIR) -p $@
+	$(MKDIR) -p $@ $@/scriptic
 $(HEADER_BUILD):
-	$(MKDIR) -p $@
+	$(MKDIR) -p $@ build/scriptic
 -include $(OBJ:.o=.P)

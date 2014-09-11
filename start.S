@@ -89,24 +89,6 @@ rv_end:
 .text
 
 
-.global __udiv64
-__udiv64:
-	adds	r0,r0,r0
-	adc	r1,r1,r1
-
-	.rept 31
-		cmp	r1,r2
-		subcs	r1,r1,r2
-		adcs	r0,r0,r0
-		adc	r1,r1,r1
-	.endr
-
-	cmp	r1,r2
-	subcs	r1,r1,r2
-	adcs	r0,r0,r0
-
-	bx	lr
-
 .global ram_memcpy
 ram_memcpy: 
 	ldr	r0, =ram_memcpy_addr
