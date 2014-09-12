@@ -3,14 +3,19 @@
 #include "bionic.h"
 #include "memio.h"
 
-#define SCRIPTIC_DEBUG /* Enable this to print commands as they're executed */
+//#define SCRIPTIC_DEBUG /* Enable this to print commands as they're executed */
 
 extern struct scriptic set_plls;
 extern struct scriptic enable_psram;
+extern struct scriptic spi_run;
+extern struct scriptic spi_run;
+extern struct scriptic spi_init;
 
 static struct scriptic *scripts[] = {
 	&set_plls,
 	&enable_psram,
+	&spi_run,
+	&spi_init,
 };
 
 #ifdef SCRIPTIC_DEBUG

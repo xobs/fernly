@@ -15,11 +15,13 @@ SRC_C = \
 	cmd-peekpoke.c \
 	cmd-reboot.c \
 	cmd-sleep.c \
+	cmd-spi.c \
 	emi.c \
 	irq.c \
 	main.c \
 	scriptic.c \
 	serial.c \
+	spi.c \
 	utils.c \
 	vectors.c \
 	vsprintf.c
@@ -27,6 +29,8 @@ SRC_C = \
 SRC_S = \
 	scriptic/set-plls.S \
 	scriptic/enable-psram.S \
+	scriptic/spi.S \
+	scriptic/spi-blockmode.S \
 	_udivsi3.S \
 	_divsi3.S \
 	start.S

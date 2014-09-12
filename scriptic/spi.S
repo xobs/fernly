@@ -1,22 +1,57 @@
 #include "scriptic.h"
 #include "fernvale-spi.h"
+#include "fernvale-gpio.h"
 
 	sc_new "spi_init", 1, 0, 0
 
 	/* Ungate the clock */
 	sc_write16 0x800, 0x800, 0x80000320
 
-	/* Switch to SPI NOR */ /* (XXX Might need to invert this) */
+	/* Switch to SPI NOR */
 	sc_write16 0, 1, 0x80000230
 
 	/* Remap GPIOs to be SPI */
-	sc_write32 0x11111100, 0x77777700, 0xa0020c80
-	sc_write32 0x00000011, 0x00000077, 0xa0020c90
+	sc_write32 \
+		GPIO_CTRL_MODE8_IO66_SFCS1 | \
+		GPIO_CTRL_MODE8_IO67_SFWP | \
+		GPIO_CTRL_MODE8_IO68_SFCS0 | \
+		GPIO_CTRL_MODE8_IO69_SFCK | \
+		GPIO_CTRL_MODE8_IO70_SFIN | \
+		GPIO_CTRL_MODE8_IO71_SFOUT, \
+		GPIO_CTRL_MODE8_IO66_MASK | \
+		GPIO_CTRL_MODE8_IO67_MASK | \
+		GPIO_CTRL_MODE8_IO68_MASK | \
+		GPIO_CTRL_MODE8_IO69_MASK | \
+		GPIO_CTRL_MODE8_IO70_MASK | \
+		GPIO_CTRL_MODE8_IO71_MASK, \
+		GPIO_CTRL_MODE8
+	sc_write32 \
+		GPIO_CTRL_MODE9_IO72_SFSHOLD, \
+		GPIO_CTRL_MODE9_IO72_MASK, \
+		GPIO_CTRL_MODE9
 
 	/* Enable high-impedence for GPIO mode */
-	sc_write16 0, 0x3fff, 0xa0020b10
-	sc_write16 0, 0x3fff, 0xa0020b40
-	sc_write16 0, 0xdff1, 0xa0020b20
-	sc_write16 0, 0xdff1, 0xa0020b50
+	sc_write16 0, \
+		GPIO_CTRL_PULL_CTRL1_IO66 | \
+		GPIO_CTRL_PULL_CTRL1_IO67 | \
+		GPIO_CTRL_PULL_CTRL1_IO72, \
+		GPIO_CTRL_RESEN1_R0
+	sc_write16 0, \
+		GPIO_CTRL_PULL_CTRL1_IO66 | \
+		GPIO_CTRL_PULL_CTRL1_IO67 | \
+		GPIO_CTRL_PULL_CTRL1_IO72, \
+		GPIO_CTRL_RESEN1_R1
+	sc_write16 0, \
+		GPIO_CTRL_PULL_CTRL2_IO68 | \
+		GPIO_CTRL_PULL_CTRL2_IO69 | \
+		GPIO_CTRL_PULL_CTRL2_IO70 | \
+		GPIO_CTRL_PULL_CTRL2_IO71, \
+		GPIO_CTRL_RESEN2_R0
+	sc_write16 0, \
+		GPIO_CTRL_PULL_CTRL2_IO68 | \
+		GPIO_CTRL_PULL_CTRL2_IO69 | \
+		GPIO_CTRL_PULL_CTRL2_IO70 | \
+		GPIO_CTRL_PULL_CTRL2_IO71, \
+		GPIO_CTRL_RESEN2_R1
 
 	sc_end

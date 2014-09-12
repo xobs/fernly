@@ -184,8 +184,6 @@ static int list_registers(void)
 
 static int do_init(void)
 {
-	const struct scriptic *script;
-
 	list_registers();
 
 	/* Disable system watchdog */
@@ -197,11 +195,8 @@ static int do_init(void)
 	/* Disable battery watchdog */
 	writew(0x2, PMIC_CTRL9);
 
-	script = scriptic_get("set_plls");
-	scriptic_execute(script);
-
-	script = scriptic_get("enable_psram");
-	scriptic_execute(script);
+	scriptic_run("set_plls");
+	scriptic_run("enable_psram");
 
 	serial_puts("\n\nFernly shell\n");
 
@@ -337,12 +332,13 @@ static int loop(void)
 
 static int cmd_help(int argc, char **argv);
 extern int cmd_hex(int argc, char **argv);
+extern int cmd_irq(int argc, char **argv);
+extern int cmd_msleep(int argc, char **argv);
 extern int cmd_peek(int argc, char **argv);
 extern int cmd_poke(int argc, char **argv);
+extern int cmd_spi(int argc, char **argv);
 extern int cmd_swi(int argc, char **argv);
 extern int cmd_reboot(int argc, char **argv);
-extern int cmd_msleep(int argc, char **argv);
-extern int cmd_irq(int argc, char **argv);
 
 static const struct {
 	int (*func)(int argc, char **argv);
@@ -383,6 +379,11 @@ static const struct {
 		.func = cmd_irq,
 		.name = "irq",
 		.help = "Manipulate IRQs",
+	},
+	{
+		.func = cmd_spi,
+		.name = "spi",
+		.help = "Manipulate on-board SPI",
 	},
 	{
 		.func = cmd_swi,
