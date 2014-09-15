@@ -16,6 +16,7 @@ SRC_C = \
 	cmd-reboot.c \
 	cmd-sleep.c \
 	cmd-spi.c \
+	cmd-led.c \
 	emi.c \
 	irq.c \
 	main.c \

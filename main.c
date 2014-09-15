@@ -339,6 +339,7 @@ extern int cmd_poke(int argc, char **argv);
 extern int cmd_spi(int argc, char **argv);
 extern int cmd_swi(int argc, char **argv);
 extern int cmd_reboot(int argc, char **argv);
+extern int cmd_led(int argc, char **argv);
 
 static const struct {
 	int (*func)(int argc, char **argv);
@@ -389,6 +390,11 @@ static const struct {
 		.func = cmd_swi,
 		.name = "swi",
 		.help = "Generate software interrupt",
+	},
+	{
+		.func = cmd_led,
+		.name = "led",
+		.help = "Turn the on-board LED on or off",
 	},
 };
 
