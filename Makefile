@@ -18,6 +18,7 @@ SRC_C = \
 	cmd-spi.c \
 	cmd-led.c \
 	cmd-bl.c \
+	cmd-lcd.c \
 	emi.c \
 	irq.c \
 	main.c \

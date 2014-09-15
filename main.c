@@ -341,6 +341,7 @@ extern int cmd_swi(int argc, char **argv);
 extern int cmd_reboot(int argc, char **argv);
 extern int cmd_led(int argc, char **argv);
 extern int cmd_bl(int argc, char **argv);
+extern int cmd_lcd(int argc, char **argv);
 
 static const struct {
 	int (*func)(int argc, char **argv);
@@ -401,6 +402,11 @@ static const struct {
 		.func = cmd_bl,
 		.name = "bl",
 		.help = "Set the LCD backlight brightness",
+	},
+	{
+		.func = cmd_lcd,
+		.name = "lcd",
+		.help = "Manipulate the LCD",
 	},
 };
 
