@@ -6,8 +6,8 @@
 
 // control set 0
 #define CLKGATE_SYS_CTL0      (0xA0010000 + 0x0300)
-#define CLKGATE_SYS_CTL0_SET  (0xA0010000 + 0x0310)
-#define CLKGATE_SYS_CTL0_CLR  (0xA0010000 + 0x0320)
+#define CLKGATE_SYS_CTL0_SET  (0xA0010000 + 0x0310) // turns the block off
+#define CLKGATE_SYS_CTL0_CLR  (0xA0010000 + 0x0320) // turns the block on
 
 #define CLKGATE_CTL0_LCD          0x0001
 #define CLKGATE_CTL0_RESIZER      0x0002
