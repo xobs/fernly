@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "serial.h"
+#include "memio.h"
 
-#define PUTS_HANDLE_NEWLINE
 #define SERIAL_USB
 
 #ifdef SERIAL_UART
@@ -119,6 +119,12 @@ int serial_puts(const void *s)
 	return 0;
 }
 
+int serial_read(void *data, int bytes)
+{
+	while (--bytes)
+		((uint8_t *)data++) = serial_getc();
+}
+
 void serial_init(void)
 {
 	int tmp;
@@ -147,45 +153,106 @@ void serial_init(void)
 }
 #else /* SERIAL_USB */
 
-static void (*rom_usb_read)(void *data, int bytes, int timeout) = (void *)0xfff03639;
-static void (*rom_usb_write)(const void *data, int bytes, int timeout) = (void *)0xfff03653;
-static void (*rom_usb_flush)(void) = (void *)0xfff04845;
+#include "fernvale-usb.h"
+
+static void usb_handle_irqs(void)
+{
+	(void)readb(USB_CTRL_INTRUSB);
+}
 
 int serial_putc(uint8_t c)
 {
-	if (c == '\n')
-		serial_putc('\r');
-	rom_usb_write(&c, 1, -1);
-	rom_usb_flush();
+	while (readb(USB_CTRL_INTRIN))
+		usb_handle_irqs();
+
+	writeb(1, USB_CTRL_INDEX);
+	writeb(c, USB_CTRL_EP1_FIFO_DB0);
+	writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
+
+	while (!readb(USB_CTRL_INTRIN))
+		usb_handle_irqs();
+
 	return 0;
+}
+
+static uint8_t *recv_bfr = (uint8_t *)0x70000000;
+static int recv_bfr_size = 0;
+static int recv_bfr_offset = 0;
+
+static void usb_receive(uint8_t endpoint_number)
+{
+	while (!readb(USB_CTRL_INTROUT))
+		usb_handle_irqs();
+
+	/* Wait for an event to happen */
+	writeb(endpoint_number, USB_CTRL_INDEX);
+
+	while (!readb(USB_CTRL_EP_OUTCSR1 & USB_CTRL_EP_OUTCSR1_RXPKTRDY));
+		
+	recv_bfr_size = readb(USB_CTRL_EP_COUNT1) & 0xff;
+	recv_bfr_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0xff00;
+
+	for (recv_bfr_offset = 0; recv_bfr_offset < recv_bfr_size; recv_bfr_offset++)
+		recv_bfr[recv_bfr_offset] = readb(USB_CTRL_EP1_FIFO_DB0);
+
+	recv_bfr_offset = 0;
+
+	/* Clear FIFO */
+	writeb(0, USB_CTRL_EP_OUTCSR1);
 }
 
 uint8_t serial_getc(void)
 {
-	uint8_t bfr;
-	rom_usb_read(&bfr, 1, -1);
-	return bfr;
+	/* Refill the buffer if it's empty */
+	if (recv_bfr_offset == recv_bfr_size)
+		usb_receive(1);
+
+	return recv_bfr[recv_bfr_offset++];
 }
 
 int serial_puts(const void *s)
 {
-#ifdef PUTS_HANDLE_NEWLINE
 	const char *str = s;
 	while(*str) {
 		if (*str == '\n')
 			serial_putc('\r');
 		serial_putc(*str++);
 	}
-#else
-	uint32_t len = _strlen(s);
-	rom_usb_write(s, len, -1);
-	rom_usb_flush();
-#endif
+	return 0;
+}
+
+int serial_read(void *data, int bytes)
+{
+	while (--bytes) {
+		*((uint8_t *)data) = serial_getc();
+		data++;
+	}
+
 	return 0;
 }
 
 void serial_init(void)
 {
+	/*
+	(void)readb(USB_CTRL_INTROUT);
+	(void)readb(USB_CTRL_INTRIN);
+	(void)readb(USB_CTRL_INTRUSB);
+
+	writeb(0, USB_CTRL_INTROUTE);
+	writeb(USB_CTRL_INTROUTE_EP1_OUT_ENABLE, USB_CTRL_INTROUTE);
+
+	recv_bfr_size = readb(USB_CTRL_EP_COUNT1) & 0xff;
+	recv_bfr_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0xff00;
+
+	for (recv_bfr_offset = 0; recv_bfr_offset < recv_bfr_size; recv_bfr_offset++)
+		recv_bfr[recv_bfr_offset] = readb(USB_CTRL_EP1_FIFO_DB0);
+		*/
+
+	/* Clear FIFO */
+	//writeb(0, USB_CTRL_EP_OUTCSR1);
+
+	recv_bfr_offset = 0;
+	recv_bfr_size = 0;
 }
 
-#endif /* UART */
+#endif /* !UART */

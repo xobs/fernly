@@ -186,6 +186,8 @@ static int do_init(void)
 {
 	list_registers();
 
+	serial_init();
+
 	/* Disable system watchdog */
 	writel(0x2200, 0xa0030000);
 
@@ -342,6 +344,8 @@ extern int cmd_reboot(int argc, char **argv);
 extern int cmd_led(int argc, char **argv);
 extern int cmd_bl(int argc, char **argv);
 extern int cmd_lcd(int argc, char **argv);
+extern int cmd_load(int argc, char **argv);
+extern int cmd_loadjump(int argc, char **argv);
 
 static const struct {
 	int (*func)(int argc, char **argv);
@@ -407,6 +411,17 @@ static const struct {
 		.func = cmd_lcd,
 		.name = "lcd",
 		.help = "Manipulate the LCD",
+	},
+	{
+		.func = cmd_load,
+		.name = "load",
+		.help = "Load data to a specific area in memory",
+	},
+	{
+		.func = cmd_loadjump,
+		.name = "loadjmp",
+		.help = "Load data to a specific area in memory, "
+			"then jump to it",
 	},
 };
 

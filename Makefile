@@ -17,6 +17,7 @@ SRC_C = \
 	cmd-sleep.c \
 	cmd-spi.c \
 	cmd-led.c \
+	cmd-load.c \
 	cmd-bl.c \
 	cmd-lcd.c \
 	emi.c \
