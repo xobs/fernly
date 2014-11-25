@@ -205,6 +205,7 @@ static int do_init(void)
 	return 0;
 }
 
+#ifdef AUTOMATED
 static inline int get_hex(int bytes)
 {
 	uint32_t word = 0;
@@ -233,7 +234,6 @@ static inline int get_hex(int bytes)
 	return word;
 }
 
-#ifdef AUTOMATED
 /* Protocol:
  * Stream is byte-oriented.  The following commands are known:
  *
