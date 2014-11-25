@@ -13,7 +13,8 @@ void _memset(void *dst0, char val, size_t length);
 unsigned long _strtoul(const void *nptr, void **endptr, int base);
 int _strlen(const char *s);
 int _strnlen(const char *s, uint32_t maxlen);
-
+void _usleep(uint32_t usecs);
+void _msleep(uint32_t msecs);
 
 /* ctype replacements */
 int _isspace(char c);

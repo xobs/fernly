@@ -703,3 +703,23 @@ int _strnlen(const char *s, uint32_t maxlen)
 	while(s[i++] && i < maxlen);
 	return i;
 }
+
+void _usleep(uint32_t usecs)
+{
+	uint32_t i, j;
+	for (i = 0; i < usecs; i++) {
+		for (j = 0; j < 73; j++) {
+			asm("nop");
+		}
+	}
+}
+
+void _msleep(uint32_t msecs)
+{
+	uint32_t i, j;
+	for (i = 0; i < msecs; i++) {
+		for (j = 0; j < 73000; j++) {
+			asm("nop");
+		}
+	}
+}
