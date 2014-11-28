@@ -14,6 +14,7 @@ static int psram_test_run(uint32_t addr, uint32_t length, uint16_t pattern)
 	int run;
 	uint32_t test_range;
 	uint32_t params;
+	int tries;
 
 	test_range  = (addr   << 8) & 0xffff0000;
 	test_range |= (length >> 8) - 1;
@@ -40,8 +41,13 @@ static int psram_test_run(uint32_t addr, uint32_t length, uint16_t pattern)
 		writel(params, EMI_CTRL_MBISTA);
 
 		/* Wait for it to finish */
-		while ( !(readl(EMI_CTRL_MBISTD) & EMI_CTRL_MBISTD_FINISHED) )
-			;
+		for (tries = 0; tries < 256; tries++)
+			if (readl(EMI_CTRL_MBISTD) & EMI_CTRL_MBISTD_FINISHED)
+				break;
+
+		/* If it didn't finis, try again */
+		if (!(readl(EMI_CTRL_MBISTD) & EMI_CTRL_MBISTD_FINISHED))
+			continue;
 
 		/* If the test failed, return false */
 		if ( readl(EMI_CTRL_MBISTD) & EMI_CTRL_MBISTD_FAILURE )
