@@ -115,7 +115,7 @@ int cmd_lcd(int argc, char **argv)
 			for (x = 0; x < lcd_width(); x++)
 				lcd_addpixel(rgb(i++, 0, 0));
 	}
-	else if (is_command(argc, argv, "tps")) {
+	else if (is_command(argc, argv, "tpd")) {
 		static int step = 0;
 		pixel_t *fb;
 		int x, y;
