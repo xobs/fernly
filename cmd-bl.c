@@ -15,7 +15,7 @@ int cmd_bl(int argc, char **argv)
 		return -1;
 	}
 
-	level = _strtoul(argv[0], NULL, 0);
+	level = strtoul(argv[0], NULL, 0);
 
 	if( level > BLLED_MAX_LEVEL ) {
 	  level = 0;

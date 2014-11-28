@@ -14,7 +14,7 @@ int cmd_led(int argc, char **argv)
 		return -1;
 	}
 
-	state = _strtoul(argv[0], NULL, 0);
+	state = strtoul(argv[0], NULL, 0);
 
 	if( state ) {
 	  *((volatile uint32_t *) BIG_LED_ADDR) = BIG_LED_ON;

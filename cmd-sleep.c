@@ -11,7 +11,7 @@ int cmd_msleep(int argc, char **argv)
 		return 1;
 	}
 
-	msecs = _strtoul(argv[0], NULL, 0);
+	msecs = strtoul(argv[0], NULL, 0);
 	_msleep(msecs);
 	return 0;
 }
@@ -25,7 +25,7 @@ int cmd_usleep(int argc, char **argv)
 		return 1;
 	}
 
-	usecs = _strtoul(argv[0], NULL, 0);
+	usecs = strtoul(argv[0], NULL, 0);
 	_usleep(usecs);
 	return 0;
 }

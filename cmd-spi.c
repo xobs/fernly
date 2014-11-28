@@ -31,11 +31,11 @@ int cmd_spi(int argc, char **argv)
 		return 1;
 	}
 
-	recv_bytes_count = _strtoul(argv[0], NULL, 0);
+	recv_bytes_count = strtoul(argv[0], NULL, 0);
 	uint8_t recv_bytes[recv_bytes_count];
 
 	for (i = 1; i < argc; i++)
-		xmit_bytes[i - 1] = _strtoul(argv[i], NULL, 0);
+		xmit_bytes[i - 1] = strtoul(argv[i], NULL, 0);
 
 	printf("Transmitting %d bytes and expecting a response with %d bytes:\n",
 			sizeof(xmit_bytes), sizeof(recv_bytes));

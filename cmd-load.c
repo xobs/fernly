@@ -16,8 +16,8 @@ int cmd_load(int argc, char **argv)
 		return 1;
 	}
 
-	offset = _strtoul(argv[0], NULL, 0);
-	total = _strtoul(argv[1], NULL, 0);
+	offset = strtoul(argv[0], NULL, 0);
+	total = strtoul(argv[1], NULL, 0);
 
 	left = total;
 	while (left--)
@@ -41,8 +41,8 @@ int cmd_loadjump(int argc, char **argv)
 		return 1;
 	}
 
-	offset = _strtoul(argv[0], NULL, 0);
-	total = _strtoul(argv[1], NULL, 0);
+	offset = strtoul(argv[0], NULL, 0);
+	total = strtoul(argv[1], NULL, 0);
 	jumpaddr = (void (*)(void))offset;
 
 	left = total;

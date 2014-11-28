@@ -14,10 +14,10 @@ int cmd_hex(int argc, char **argv)
 		return -1;
 	}
 
-	offset = _strtoul(argv[0], NULL, 0);
+	offset = strtoul(argv[0], NULL, 0);
 
 	if (argc > 1)
-		count = _strtoul(argv[1], NULL, 0);
+		count = strtoul(argv[1], NULL, 0);
 
 	serial_print_hex((const void *)offset, count);
 	return 0;

@@ -21,7 +21,7 @@ int cmd_irq(int argc, char **argv)
 		return -1;
 	}
 
-	num = _strtoul(argv[1], NULL, 0);
+	num = strtoul(argv[1], NULL, 0);
 	if (num >= __irq_max__) {
 		printf("Only %d IRQs present\n", __irq_max__);
 		return -1;
