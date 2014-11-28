@@ -3,311 +3,159 @@
 #include "memio.h"
 #include "printf.h"
 #include "fernvale-lcd.h"
-#include "fernvale-gpio.h"
-#include "fernvale-clockgate.h"
+#include "lcd.h"
 
-static const uint16_t *fb = (void *)0x010000;
-static const uint32_t fb_width = 320;
-static const uint32_t fb_height = 240;
-
-static inline unsigned rgb565(unsigned r, unsigned g, unsigned b)
+#ifdef LCD_DEBUG
+static void lcd_dump(void)
 {
-	return  (((r >> 3) & 0x1f) << 11) |
-		(((g >> 2) & 0x3f) <<  6) |
-		(((b >> 3) & 0x1f)      );
+	/* Dump registers */
+//	printf("LCD_PAR0_CMD_PORT:      %04x\n", readw(LCD_PAR0_CMD_PORT_REG));
+//	printf("LCD_PAR0_DAT_PORT:      %04x\n", readw(LCD_PAR0_DAT_PORT_REG));
+//	printf("LCD_PAR1_CMD_PORT:      %04x\n", readw(LCD_PAR1_CMD_PORT_REG));
+//	printf("LCD_PAR1_DAT_PORT:      %04x\n", readw(LCD_PAR1_DAT_PORT_REG));
+//	printf("LCD_PAR0_CFG:           %08x\n", readl(LCD_PAR0_CFG_REG));
+//	printf("LCD_PAR1_CFG:           %08x\n", readl(LCD_PAR1_CFG_REG));
+	printf("LCD_STATUS:             %04x\n", readw(LCD_STATUS_REG));
+	printf("LCD_INT_ENA:            %04x\n", readw(LCD_INT_ENA_REG));
+	printf("LCD_INT_STAT:           %04x\n", readw(LCD_INT_STAT_REG));
+	printf("LCD_RUN:                %04x\n", readw(LCD_RUN_REG));
+	printf("LCD_RESET:              %04x\n", readw(LCD_RESET_REG));
+	printf("LCD_PAR_DATA_WIDTH:     %08x\n", readl(LCD_PAR_DATA_WIDTH_REG));
+	printf("LCD_TEARING:            %08x\n", readl(LCD_TEARING_REG));
+	printf("LCD_AUTOCOPY_CTRL:      %08x\n", readl(LCD_AUTOCOPY_CTRL_REG));
+	printf("LCD_AUTOCOPY_OFFSET:    %08x\n", readl(LCD_AUTOCOPY_OFFSET_REG));
+	printf("LCD_AUTOCOPY_SIZE:      %08x\n", readl(LCD_AUTOCOPY_SIZE_REG));
+	printf("LCD_AUTOCOPY_CMD_ADDR:  %04x\n", readw(LCD_AUTOCOPY_CMD_ADDR_REG));
+	printf("LCD_AUTOCOPY_DATA_ADDR: %04x\n", readw(LCD_AUTOCOPY_DATA_ADDR_REG));
+	printf("LCD_LAYER0_CTRL:        %08x\n", readl(LCD_LAYER0_CTRL_REG));
+	printf("LCD_LAYER0_OFFSET:      %08x\n", readl(LCD_LAYER0_OFFSET_REG));
+	printf("LCD_LAYER0_SIZE:        %08x\n", readl(LCD_LAYER0_SIZE_REG));
+	printf("LCD_LAYER0_SRC_ADDR:    %08x\n", readl(LCD_LAYER0_SRC_ADDR_REG));
+//	printf("LCD_LAYER0_MEM_PITCH:   %08x\n", readl(LCD_LAYER0_MEM_PITCH_REG));
+//	printf("LCD_FRAME_COUNTER_CON:  %08x\n", readl(LCD_FRAME_COUNTER_CON_REG));
+//	printf("LCD_FRAME_COUNTER:      %08x\n", readl(LCD_FRAME_COUNTER_REG));
 }
-
-#define USE_DMA 0
-#if USE_DMA  // needs debuggin'
-static void flush_dma( uint8_t q ) {
-  while(*((volatile uint16_t *) LCD_STATUS_REG) & LCD_STATUS_BUSY_BIT)
-    ;
-  
-  *((volatile uint16_t *) LCD_INT_ENA_REG) &= ~LCD_INT_ENA_TRIG_BIT;
-  *((volatile uint32_t *) LCD_MEMMAP_CTRL_REG) &= 0x0FFFFFFF; // disable all layers
-  *((volatile uint32_t *) LCD_MEMMAP_CTRL_REG) &= 0xFFFFE0FF; // clear command count
-  *((volatile uint32_t *) LCD_MEMMAP_CTRL_REG) |= (q << 8); // enter command count
-  *((volatile uint32_t *) LCD_MEMMAP_CTRL_REG) |= 0x8000; // enable commands to be sent first
-  *((volatile uint32_t *)LCD_MEMMAP_SIZE_REG) = 0x0;
-  *((volatile uint16_t *)LCD_RUN_REG) = 0;
-  *((volatile uint16_t *)LCD_RUN_REG) = LCD_RUN_BIT;
-  _usleep(1);
-
-  while(*((volatile uint16_t *) LCD_STATUS_REG) & LCD_STATUS_BUSY_BIT)
-    ;
-
-  *((volatile uint32_t *)LCD_MEMMAP_SIZE_REG) = 0x014000F0;
-}
-
-static void lcd_cmd( uint16_t cmd ) {
-  *((volatile uint32_t *)LCD_CMD_LIST_ADDR) = 0x800000 | cmd;
-  flush_dma(1);
-}
-
-static void lcd_dat( uint16_t dat ) {
-  *((volatile uint16_t *)LCD_CMD_LIST_ADDR) = dat;
-  flush_dma(1);
-}
-
-// note these don't flush the DMA, you have to do this yourself explicitly later on
-static void lcd_cmd_slot( uint16_t cmd, uint8_t slot ) { // slot is the order to execute
-  *((volatile uint32_t *) (LCD_CMD_LIST_ADDR + (slot << 2))) = 0x800000 | cmd;
-}
-static void lcd_dat_slot( uint16_t dat, uint8_t slot ) { // slot is the order to execute
-  *((volatile uint32_t *) (LCD_CMD_LIST_ADDR + (slot << 2))) = dat;
-}
-#else
-
-#define lcd_cmd(_cmd_) writew(_cmd_, LCD_PAR0_CMD_PORT_REG)
-#define lcd_dat(_dat_) writew(_dat_, LCD_PAR0_DAT_PORT_REG)
-
-#endif
-
-
-static void setup_lcd_gpio(void)
-{
-	/* LPCE0, LPTE0, LPRSTB */
-	writel(readl(GPIO_CTRL_MODE5) & ~(GPIO_CTRL_MODE5_IO40_MASK |
-					  GPIO_CTRL_MODE5_IO46_MASK |
-					  GPIO_CTRL_MODE5_IO45_MASK),
-					  GPIO_CTRL_MODE5);
-	writel(readl(GPIO_CTRL_MODE5) | (GPIO_CTRL_MODE5_IO40_LPCE0B |
-					 GPIO_CTRL_MODE5_IO45_LPTE0  |
-					 GPIO_CTRL_MODE5_IO46_LPRSTB),
-					 GPIO_CTRL_MODE5);
-
-	/* NLD0-4, LWRB, LRDB, LPA0 */
-	writel(readl(GPIO_CTRL_MODE4) & ~(GPIO_CTRL_MODE4_IO32_MASK |
-					  GPIO_CTRL_MODE4_IO33_MASK |
-					  GPIO_CTRL_MODE4_IO34_MASK |
-					  GPIO_CTRL_MODE4_IO35_MASK |
-					  GPIO_CTRL_MODE4_IO36_MASK |
-					  GPIO_CTRL_MODE4_IO37_MASK |
-					  GPIO_CTRL_MODE4_IO38_MASK |
-					  GPIO_CTRL_MODE4_IO39_MASK),
-					  GPIO_CTRL_MODE4);
-	writel(readl(GPIO_CTRL_MODE4) | (GPIO_CTRL_MODE4_IO32_NLD4 |
-					 GPIO_CTRL_MODE4_IO33_NLD3 |
-					 GPIO_CTRL_MODE4_IO34_NLD2 |
-					 GPIO_CTRL_MODE4_IO35_NLD1 |
-					 GPIO_CTRL_MODE4_IO36_NLD0 |
-					 GPIO_CTRL_MODE4_IO37_LWRB |
-					 GPIO_CTRL_MODE4_IO38_LRDB |
-					 GPIO_CTRL_MODE4_IO39_LPA0),
-					 GPIO_CTRL_MODE4);
-
-	/* NLD5-8 */
-	writel(readl(GPIO_CTRL_MODE3) & ~(GPIO_CTRL_MODE3_IO28_MASK |
-					  GPIO_CTRL_MODE3_IO29_MASK |
-					  GPIO_CTRL_MODE3_IO30_MASK |
-					  GPIO_CTRL_MODE3_IO31_MASK),
-					  GPIO_CTRL_MODE3);
-	writel(readl(GPIO_CTRL_MODE3) | (GPIO_CTRL_MODE3_IO28_NLD8 |
-					 GPIO_CTRL_MODE3_IO29_NLD7 |
-					 GPIO_CTRL_MODE3_IO30_NLD6 |
-					 GPIO_CTRL_MODE3_IO31_NLD5),
-					 GPIO_CTRL_MODE3);
-}
+#endif /* LCD_DEBUG */
 
 static int is_command(int argc, char **argv, const char *cmd)
 {
 	return ((argc > 0) && !_strcasecmp(argv[0], cmd));
 }
 
+static pixel_t color_wheel(int step) {
+	step &= 255;
+	if (step < 85) {
+		return rgb(step * 3, 255 - step * 3, 0);
+	}
+	else if (step < 170) {
+		step -= 85;
+		return rgb(255 - step * 3, 0, step * 3);
+	}
+	else {
+		step -= 170;
+		return rgb(0, step * 3, 255 - step * 3);
+	}
+}
+
 int cmd_lcd(int argc, char **argv)
 {
 	int i;
+	int ret;
 
-	if (is_command(argc, argv, "su")) {
-		setup_lcd_gpio();
-	  
-		/* power up the LCD block */
-		writel(CLKGATE_CTL0_LCD, CLKGATE_SYS_CTL0_CLR);
-		_msleep(1);
-
-		/* execute setup command
-		 * we're on CS0
-		 * our internal bus period is 166 MHz, or 6.25ns
-		 * write cycle = 66ns = 11 cycles - 1 = 10
-		 * write c22write su (tcs) = 15ns = 3 cycles
-		 * write ce2write hold (tdht) = 10ns = 2 cycles - 1 = 1 
-		 * read latency = 450 ns = 72 cycles, crop at 63 cycles
-		 * read ce2read su (trdl - trcs) = 45-45 = 0 ns = 0 cycles
-		 * read th = 90ns = 15 cycles (not quite clear, but best guess)
-		 */
-		writel( (10 << LCD_PAR_CFG_WR_WAIT_CYC_BIT) | 
-			(3  << LCD_PAR_CFG_WR_TSU_BIT) |
-			(1  << LCD_PAR_CFG_WR_TH_BIT) |
-			/* this might need to be shorter?? */
-			(63 << LCD_PAR_CFG_RD_LATENCY_CYC_BIT) |
-			(0  << LCD_PAR_CFG_RD_TSU_BIT) |
-			(15 << LCD_PAR_CFG_RD_TH_BIT),
-			LCD_PAR0_CFG_REG);
-	  
-		/* 9 bit width, tchw is 0 for this chipset
-		 * (back2back writes allowed)
-		 */
-		writel( (0                      << LCD_PAR_W2W_WAIT0_BIT) |
-			(LCD_PAR_BUS_WIDTH_9BIT << LCD_PAR_BUS_WIDTH0_BIT),
-			LCD_PAR_DATA_WIDTH_REG);
-	  
-		/* AUTOCOPY off initially */
-		writel(0, LCD_AUTOCOPY_CTRL_REG);
-
+	if (is_command(argc, argv, "init")) {
+		printf("Initializing LCD... ");
+		ret = lcd_init();
+		if (ret)
+			printf("failed: %d\n", ret);
+		else
+			printf("Ok\n");
 	}
-	else if (is_command(argc, argv, "auto")) {
-		writel(0, LCD_LAYER0_CTRL_REG);
-		writel(0, LCD_LAYER0_OFFSET_REG);
-		writel(0, LCD_LAYER0_BUFF_ADDR_REG);
-		writel(0x014000f0, LCD_LAYER0_SIZE_REG);
-		writel(0, LCD_LAYER0_MEM_OFFSET_REG);
-		writel(0x1e0, LCD_LAYER0_MEM_PITCH_REG);
-
-		writel(0, LCD_AUTOCOPY_OFFSET_REG);
-		writew(0x4000, LCD_AUTOCOPY_CMD_ADDR_REG);
-		writew(0x4100, LCD_AUTOCOPY_DATA_ADDR_REG);
-		writel(0x014000f0, LCD_AUTOCOPY_SIZE_REG);
-		writel(0x80008000, LCD_AUTOCOPY_BG_COLOR_REG);
-
-		writel(0x85020094, LCD_AUTOCOPY_CTRL_REG);
-	}
+#ifdef LCD_DEBUG
 	else if (is_command(argc, argv, "dump")) {
-		// dump registers
-		printf("LCD_PAR0_CMD_PORT_REG: %04x\n",  readw(LCD_PAR0_CMD_PORT_REG));
-		printf("LCD_PAR0_DAT_PORT_REG: %04x\n",  readw(LCD_PAR0_DAT_PORT_REG));
-		printf("LCD_PAR1_CMD_PORT_REG: %04x\n",  readw(LCD_PAR1_CMD_PORT_REG));
-		printf("LCD_PAR1_DAT_PORT_REG: %04x\n",  readw(LCD_PAR1_DAT_PORT_REG));
-		printf("LCD_PAR0_CFG_REG: %08x\n",       readl(LCD_PAR0_CFG_REG));
-		printf("LCD_PAR1_CFG_REG: %08x\n",       readl(LCD_PAR1_CFG_REG));
-		printf("LCD_STATUS_REG: %04x\n",         readw(LCD_STATUS_REG));
-		printf("LCD_INT_ENA_REG: %04x\n",        readw(LCD_INT_ENA_REG));
-		printf("LCD_INT_STAT_REG: %04x\n",       readw(LCD_INT_STAT_REG));
-		printf("LCD_RUN_REG: %04x\n",            readw(LCD_RUN_REG));
-		printf("LCD_RESET_REG: %04x\n",          readw(LCD_RESET_REG));
-		printf("LCD_PAR_DATA_WIDTH_REG: %08x\n", readl(LCD_PAR_DATA_WIDTH_REG));
-		printf("LCD_TEARING_CON_REG: %08x\n",    readl(LCD_TEARING_CON_REG));
-		printf("LCD_AUTOCOPY_CTRL_REG: %08x\n",  readl(LCD_AUTOCOPY_CTRL_REG));
+		lcd_dump();
+	}
+#endif
+	else if (is_command(argc, argv, "start")) {
+		printf("Starting LCD... ");
+		ret = lcd_start();
+		if (ret)
+			printf("failed: %d\n", ret);
+		else
+			printf("Ok\n");
 	}
 	else if (is_command(argc, argv, "run")) {
-	  // cause the interface to run
-		writel(0, LCD_RUN_REG);
-		writel(LCD_RUN_BIT, LCD_RUN_REG);
+		printf("Running LCD... ");
+		ret = lcd_run();
+		if (ret)
+			printf("failed: %d\n", ret);
+		else
+			printf("Ok\n");
 	}
 	else if (is_command(argc, argv, "stop")) {
-	  // cause the interface to stop
-		writel(0, LCD_RUN_REG);
+		printf("Stopping LCD... ");
+		ret = lcd_stop();
+		if (ret)
+			printf("failed: %d\n", ret);
+		else
+			printf("Ok\n");
 	}
-	else if (is_command(argc, argv, "init")) {
-		writew(1, LCD_RESET_REG);
-		_usleep(20000);
-		writew(0, LCD_RESET_REG); /* Turn on reset */
-		_msleep(20);
-		writew(1, LCD_RESET_REG); /* Turn off reset */
-		_msleep(150);
+	else if (is_command(argc, argv, "tpp1")) {
+		int w = lcd_width();
+		int h = lcd_height();
+		int total = w * h;
 
-		lcd_cmd(0x11); //Exit Sleep
-		_msleep(50); // Delay 50ms
-		lcd_cmd(0xC0); //Power control
-		lcd_dat(0x26);
-		lcd_cmd(0xC1); //Power control
-		lcd_dat(0x11); //SAP[2:0];BT[3:0]
-		lcd_cmd(0xC5); //VCM control
-		lcd_dat(0x35);
-		lcd_dat(0x3E);
-		lcd_cmd(0xc7);
-		lcd_dat(0xbe);
-
-		lcd_cmd(0x36); // Memory Access Control
-		lcd_dat(0x48);
-
-		lcd_cmd(0x3a); // pixel format set
-		lcd_dat(0x55); // 16bpp
-
-		lcd_cmd(0xB1); // Frame Rate Control
-		lcd_dat(0x00);
-		lcd_dat(0x1b);
-
-		//--------------ddram ---------------------
-		lcd_cmd(0x2a); // column set
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0xEF);
-		lcd_cmd(0x2b); // page address set
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0x01);
-		lcd_dat(0x3F);
-		lcd_cmd(0x34); // tearing effect off
-		//lcd_cmd(0x35); // tearing effect on
-		//lcd_cmd(0xb4); // display inversion
-		//lcd_dat(0x00,0x00);
-		lcd_cmd(0xb7); //entry mode set
-		lcd_dat(0x07);
-		//-----------------display---------------------
-		lcd_cmd(0xb6); // display function control
-		lcd_dat(0x0a);
-		lcd_dat(0x82);
-		lcd_dat(0x27);
-		lcd_dat(0x00);
-		lcd_cmd(0x11); //sleep out
-		_msleep(100);
-		lcd_cmd(0x29); // display on
-		_msleep(100);
-		lcd_cmd(0x2c); //memory write	  
+		for (i = 0; i < total; i++)
+			lcd_addpixel(i);
 	}
-	else if (is_command(argc, argv, "tp1")) {
-		lcd_cmd(0x2a); // column set
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0xEF);
-		lcd_cmd(0x2b); // page address set
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0x01);
-		lcd_dat(0x3F);
-
-		lcd_cmd(0x2c); //memory write	  
-		for (i = 0; i < 16384; i++) {
-			lcd_dat((uint16_t) i);
-		}
-	}
-	else if (is_command(argc, argv, "tp2")) {
+	else if (is_command(argc, argv, "tpp2")) {
 		int x, y;
-		lcd_cmd(0x2a); // column set
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0xEF);
-		lcd_cmd(0x2b); // page address set
-		lcd_dat(0x00);
-		lcd_dat(0x00);
-		lcd_dat(0x01);
-		lcd_dat(0x3F);
-
-		lcd_cmd(0x2c); //memory write	  
 
 		i = 0;
-		for (y = 0; y < 320; y++) {
-			for (x = 0; x < 240; x++) {
-				uint16_t pixel = rgb565(i++, 0, 0);
-				lcd_dat(pixel >> 8);
-				lcd_dat(pixel & 0xff);
+		for (y = 0; y < lcd_height(); y++)
+			for (x = 0; x < lcd_width(); x++)
+				lcd_addpixel(rgb(i++, 0, 0));
+	}
+	else if (is_command(argc, argv, "tps")) {
+		static int step = 0;
+		pixel_t *fb;
+		int x, y;
+		int w, h;
+
+		fb = lcd_fb();
+
+		h = lcd_height();
+		w = lcd_width();
+
+		/* Stupid clear-screen */
+		memset(fb, 0, w * h * lcd_bpp());
+
+		printf("Width: %d  Height: %d\n", w, h);
+
+		i = step++;
+		fb = lcd_fb();
+		for (y = 0; y < h; y++) {
+			for (x = 0; x < w; x++) {
+				/* Swap axes, to verify X and Y work */
+				if (step & 1)
+					*fb++ = color_wheel(y + step);
+				else
+					*fb++ = color_wheel(x + step);
 			}
 		}
+		lcd_run();
 	}
 	else {
 		printf("lcd sub-commands (usage: lcd [subcmd]):\n");
-		printf("\tsu      Set up pinmux and clocks\n");
 		printf("\tinit    Initialize LCD registers\n");
-		printf("\tauto    Set up auto-refresh\n");
+		printf("\tstart   Prep LCD for auto-update\n");
+		printf("\trun     Transfer one frame of the LCD\n");
+		printf("\tstop    Stop and reset LCD auto-update\n");
+#ifdef LCD_DEBUG
 		printf("\tdump    Dump current register list\n");
-		printf("\trun     Set \"run\" bit\n");
-		printf("\tstop    Clear \"run\" bit\n");
-		printf("\ttp1     Display 'test pattern 1'\n");
-		printf("\ttp2     Display 'test pattern 2'\n");
-		printf("\ttps     Step through the test pattern\n");
+#endif
+		printf("\ttpp1    Display bitbanged, PIO 'test pattern 1'\n");
+		printf("\ttpp2    Display bitbanged, PIO 'test pattern 2'\n");
+		printf("\ttpd     DMA test pattern (flips on each iteration)\n");
 	}
 
 	return 0;
