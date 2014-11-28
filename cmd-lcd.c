@@ -75,14 +75,6 @@ int cmd_lcd(int argc, char **argv)
 		lcd_dump();
 	}
 #endif
-	else if (is_command(argc, argv, "start")) {
-		printf("Starting LCD... ");
-		ret = lcd_start();
-		if (ret)
-			printf("failed: %d\n", ret);
-		else
-			printf("Ok\n");
-	}
 	else if (is_command(argc, argv, "run")) {
 		printf("Running LCD... ");
 		ret = lcd_run();
@@ -147,7 +139,6 @@ int cmd_lcd(int argc, char **argv)
 	else {
 		printf("lcd sub-commands (usage: lcd [subcmd]):\n");
 		printf("\tinit    Initialize LCD registers\n");
-		printf("\tstart   Prep LCD for auto-update\n");
 		printf("\trun     Transfer one frame of the LCD\n");
 		printf("\tstop    Stop and reset LCD auto-update\n");
 #ifdef LCD_DEBUG
