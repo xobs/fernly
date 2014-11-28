@@ -14,7 +14,6 @@ static inline pixel_t rgb(unsigned r, unsigned g, unsigned b)
 }
 
 int lcd_init(void);
-int lcd_start(void);
 int lcd_run(void);
 int lcd_stop(void);
 

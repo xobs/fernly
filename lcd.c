@@ -131,10 +131,8 @@ static int lcd_setup(void)
 	return 0;
 }
 
-int lcd_init(void)
+static void lcd_panel_setup(void)
 {
-	lcd_setup();
-
 	writew(LCD_RESET_CLEAR, LCD_RESET_REG);
 	_usleep(20000);
 	writew(LCD_RESET_SET, LCD_RESET_REG);
@@ -194,8 +192,6 @@ int lcd_init(void)
 
 	/* Memory Write -- prep for the first pixel to be written */
 	lcd_cmd(0x2c);
-
-	return 0;
 }
 
 /* Fill pre-frame command buffer.  These commands are sent out before
@@ -204,22 +200,6 @@ int lcd_init(void)
 static void lcd_fill_cmd_buffer(void)
 {
 	int ncommands = 0;
-
-#if 0
-	/* Column set */
-	lcd_cmd_slot(0x2a, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0xEF, ncommands++);
-
-	/* Page address set */
-	lcd_cmd_slot(0x2b, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x01, ncommands++);
-	lcd_dat_slot(0x3F, ncommands++);
-#endif
 
 	/* Memory write */
 	lcd_cmd_slot(0x2c, ncommands++);
@@ -231,7 +211,7 @@ static void lcd_fill_cmd_buffer(void)
 		LCD_AUTOCOPY_CTRL_REG);
 }
 
-int lcd_start(void)
+static int lcd_dma_setup(void)
 {
 	/* Set up AUTOCOPY (i.e. freerunning mode) */
 	writel(LCD_FORMAT | (0x1f  << LCD_AUTOCOPY_CTRL_PERIOD_SHIFT),
@@ -252,14 +232,19 @@ int lcd_start(void)
 	writel(readl(LCD_AUTOCOPY_CTRL_REG) | LCD_AUTOCOPY_CTRL_EN0,
 			LCD_AUTOCOPY_CTRL_REG);
 
-	lcd_fill_cmd_buffer();
-
 	/* Enable AUTOCOPY_CTRL command transfer */
 	writel(readl(LCD_AUTOCOPY_CTRL_REG)
 			| LCD_AUTOCOPY_CTRL_ENC
 			| LCD_AUTOCOPY_CTRL_SEND_RESIDUE,
 			LCD_AUTOCOPY_CTRL_REG);
+	return 0;
+}
 
+int lcd_init(void)
+{
+	lcd_setup();
+	lcd_panel_setup();
+	lcd_dma_setup();
 	return 0;
 }
 
