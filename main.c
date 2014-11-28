@@ -182,6 +182,7 @@ static int list_registers(void)
 	return 0;
 }
 
+static int shell_run_command(char *line);
 static int do_init(void)
 {
 	list_registers();
@@ -201,6 +202,9 @@ static int do_init(void)
 	scriptic_run("enable_psram");
 
 	serial_puts("\n\nFernly shell\n");
+	shell_run_command("bl 5");
+	shell_run_command("lcd init");
+	shell_run_command("lcd tpd");
 
 	return 0;
 }
@@ -479,7 +483,7 @@ static int loop(void)
 	printf("\n");
 	return shell_run_command(line);
 }
-#endif
+#endif /* ! AUTOMATED */
 
 int main(void)
 {
