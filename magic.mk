@@ -16,8 +16,8 @@
 
 vpath %.S . $(TOP)
 $(BUILD)/%.o: %.S
-	$(ECHO) "CC $<"
-	$(Q)$(CC) $(CFLAGS) $(AFLAGS) -c -o $@ $<
+	$(ECHO) "AS $<"
+	$(Q)$(AS) $(AFLAGS) -c -o $@ $<
 
 vpath %.s . $(TOP)
 $(BUILD)/%.o: %.s

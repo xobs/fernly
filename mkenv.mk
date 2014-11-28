@@ -43,7 +43,7 @@ MKDIR = mkdir
 SED = sed
 PYTHON = python
 
-AS = $(CROSS_COMPILE)as
+AS = $(CROSS_COMPILE)gcc $(CFLAGS) -D__ASSEMBLY__
 CC = $(CROSS_COMPILE)clang
 LD = $(CROSS_COMPILE)ld
 OBJCOPY = $(CROSS_COMPILE)objcopy
