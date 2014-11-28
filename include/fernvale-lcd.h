@@ -202,7 +202,7 @@
 #define LCD_LAYER0_SRC_ADDR_REG			(LCD_CTRL_ADDR+0x00BC)
 #define LCD_LAYER0_SIZE_REG			(LCD_CTRL_ADDR+0x00C0)
 #define LCD_LAYER0_MEM_OFFSET_REG		(LCD_CTRL_ADDR+0x00C8)
-#define LCD_LAYER0_MEM_PITCH_REG		(LCD_CTRL_ADDR+0x00CC)
+#define LCD_LAYER0_PITCH_REG			(LCD_CTRL_ADDR+0x00CC)
 
 // there's 3 more layers, but I'm happy to just get one working for now...
 

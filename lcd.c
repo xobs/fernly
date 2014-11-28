@@ -198,24 +198,53 @@ int lcd_init(void)
 	return 0;
 }
 
+/* Fill pre-frame command buffer.  These commands are sent out before
+ * pixel data, whenever RUN is enabled.
+ */
+static void lcd_fill_cmd_buffer(void)
+{
+	int ncommands = 0;
+
+#if 0
+	/* Column set */
+	lcd_cmd_slot(0x2a, ncommands++);
+	lcd_dat_slot(0x00, ncommands++);
+	lcd_dat_slot(0x00, ncommands++);
+	lcd_dat_slot(0x00, ncommands++);
+	lcd_dat_slot(0xEF, ncommands++);
+
+	/* Page address set */
+	lcd_cmd_slot(0x2b, ncommands++);
+	lcd_dat_slot(0x00, ncommands++);
+	lcd_dat_slot(0x00, ncommands++);
+	lcd_dat_slot(0x01, ncommands++);
+	lcd_dat_slot(0x3F, ncommands++);
+#endif
+
+	/* Memory write */
+	lcd_cmd_slot(0x2c, ncommands++);
+
+	/* Count the number of cmmands and add it to AUTOCOPY_CTRL */
+	writel((readl(LCD_AUTOCOPY_CTRL_REG)
+		& ~LCD_AUTOCOPY_CTRL_CMD_COUNT_MASK)
+		| ((ncommands - 1) << LCD_AUTOCOPY_CTRL_CMD_COUNT_SHIFT),
+		LCD_AUTOCOPY_CTRL_REG);
+}
+
 int lcd_start(void)
 {
-	int ncommands;
-
-	writel(0, LCD_AUTOCOPY_CTRL_REG);
-
 	/* Set up AUTOCOPY (i.e. freerunning mode) */
 	writel(LCD_FORMAT | (0x1f  << LCD_AUTOCOPY_CTRL_PERIOD_SHIFT),
 		LCD_AUTOCOPY_CTRL_REG);
 	writel((fb_height << 16) | (fb_width), LCD_AUTOCOPY_SIZE_REG);
 	writel(0, LCD_AUTOCOPY_OFFSET_REG);
 
-	writel(LCD_LAYER_CTRL_CLRDPT_RGB565 | LCD_LAYER_CTRL_SWP, LCD_LAYER0_CTRL_REG);
 	writel((uint32_t)fb, LCD_LAYER0_SRC_ADDR_REG);
+	writel(LCD_LAYER_CTRL_CLRDPT_RGB565, LCD_LAYER0_CTRL_REG);
 	writel((fb_height << 16) | (fb_width), LCD_LAYER0_SIZE_REG);
+	writel(fb_width * fb_bpp, LCD_LAYER0_PITCH_REG);
 	writel(0, LCD_LAYER0_MEM_OFFSET_REG);
 	writel(0, LCD_LAYER0_OFFSET_REG);
-	writel(fb_width * fb_bpp, LCD_LAYER0_MEM_PITCH_REG);
 	writel(0, LCD_LAYER0_SRC_KEY_REG);
 
 	writel(rgb(0, 255, 255), LCD_AUTOCOPY_BG_COLOR_REG);
@@ -223,39 +252,13 @@ int lcd_start(void)
 	writel(readl(LCD_AUTOCOPY_CTRL_REG) | LCD_AUTOCOPY_CTRL_EN0,
 			LCD_AUTOCOPY_CTRL_REG);
 
-	/* Fill pre-frame command buffer */
-	ncommands = 0;
-#if 1
-	lcd_cmd_slot(0x2a, ncommands++); // column set
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0xEF, ncommands++);
-
-	lcd_cmd_slot(0x2b, ncommands++); // page address set
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x00, ncommands++);
-	lcd_dat_slot(0x01, ncommands++);
-	lcd_dat_slot(0x3F, ncommands++);
-#endif
-
-	lcd_cmd_slot(0x2c, ncommands++); //memory write     
-
-	/* Count the number of cmmands and add it to AUTOCOPY_CTRL */
-	writel((readl(LCD_AUTOCOPY_CTRL_REG)
-		& ~LCD_AUTOCOPY_CTRL_CMD_COUNT_MASK)
-		| ((ncommands - 1) << LCD_AUTOCOPY_CTRL_CMD_COUNT_SHIFT),
-		LCD_AUTOCOPY_CTRL_REG);
+	lcd_fill_cmd_buffer();
 
 	/* Enable AUTOCOPY_CTRL command transfer */
 	writel(readl(LCD_AUTOCOPY_CTRL_REG)
 			| LCD_AUTOCOPY_CTRL_ENC
 			| LCD_AUTOCOPY_CTRL_SEND_RESIDUE,
 			LCD_AUTOCOPY_CTRL_REG);
-
-	//writel(LCD_FREERUN_CTRL_ENABLE_GMC, LCD_FREERUN_CTRL_REG);
-	/* Start the LCD freerun engine */
-	//writew(LCD_FRAME_COUNTER_CON_START, LCD_FRAME_COUNTER_CON_REG);
 
 	return 0;
 }
@@ -264,8 +267,8 @@ int lcd_run(void)
 {
 	writew(0, LCD_RUN_REG);
 
-	/* This register needs to be re-written to re-enable the command queue */
-	lcd_start();
+	/* Must refill the command buffer before sending another frame */
+	lcd_fill_cmd_buffer();
 
 	writew(LCD_RUN_BIT, LCD_RUN_REG);
 	return 0;
