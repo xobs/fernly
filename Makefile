@@ -3,7 +3,7 @@ include magic.mk
 
 CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
 	 -Os -ggdb -Iinclude
-AFLAGS = -D__ASSEMBLY__
+AFLAGS = 
 
 LDFLAGS = --nostdlib -T fernvale.ld
 LIBS =
@@ -22,6 +22,7 @@ SRC_C = \
 	cmd-lcd.c \
 	emi.c \
 	irq.c \
+	lcd.c \
 	main.c \
 	scriptic.c \
 	serial.c \
