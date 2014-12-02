@@ -185,9 +185,9 @@ static int list_registers(void)
 static int shell_run_command(char *line);
 static int do_init(void)
 {
-	list_registers();
-
 	serial_init();
+
+	list_registers();
 
 	/* Disable system watchdog */
 	writel(0x2200, 0xa0030000);
