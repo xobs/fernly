@@ -155,59 +155,91 @@ void serial_init(void)
 
 #include "fernvale-usb.h"
 
+static uint8_t *recv_bfr = (uint8_t *)0x70000000;
+static int recv_size = 0;
+static int recv_offset = 0;
+
+static void usb_receive_wait(uint8_t endpoint_number)
+{
+	/* Wait for data to exist, ignoring other USB IRQs */
+	while (!readb(USB_CTRL_INTROUT))
+		(void)readb(USB_CTRL_INTRUSB);
+
+	/* Select EP1 */
+	writeb(endpoint_number, USB_CTRL_INDEX);
+
+	/* Set endpoint to OUT */
+	writeb(readb(USB_CTRL_EP_INCSR2) & ~USB_CTRL_EP_INCSR2_MODE,
+			USB_CTRL_EP_INCSR2);
+
+	while (!readb(USB_CTRL_EP_OUTCSR1 & USB_CTRL_EP_OUTCSR1_RXPKTRDY));
+		
+	recv_size  = (readb(USB_CTRL_EP_COUNT1) << 0) & 0x00ff;
+	recv_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0xff00;
+
+	for (recv_offset = 0; recv_offset < recv_size; recv_offset++)
+		recv_bfr[recv_offset] = readb(USB_CTRL_EP1_FIFO_DB0);
+	recv_offset = 0;
+
+	/* Clear FIFO (write 0 to RXPKTRDY) */
+	writeb(0, USB_CTRL_EP_OUTCSR1);
+}
+
 static void usb_handle_irqs(void)
 {
+	/* Ignore general-purpose IRQs */
 	(void)readb(USB_CTRL_INTRUSB);
+
+	/* Select EP1 */
+	writeb(1, USB_CTRL_INDEX);
+
+	/* Flush the output FIFO if there is data present */
+	if (readb(USB_CTRL_EP_INCSR1) & USB_CTRL_EP_INCSR1_FIFONOTEMPTY) {
+		writeb(readb(USB_CTRL_EP_INCSR2) | USB_CTRL_EP_INCSR2_MODE,
+			USB_CTRL_EP_INCSR2);
+		writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
+	}
+
+	/* Set endpoint to OUT */
+	writeb(readb(USB_CTRL_EP_INCSR2) & ~USB_CTRL_EP_INCSR2_MODE,
+			USB_CTRL_EP_INCSR2);
+
+	/* If there are incoming bytes, read them into the buffer */
+	if (readb(USB_CTRL_EP_OUTCSR1 & USB_CTRL_EP_OUTCSR1_RXPKTRDY))
+		usb_receive_wait(1);
+
+	/* Set endpoint to IN mode */
+	writeb(readb(USB_CTRL_EP_INCSR2) | USB_CTRL_EP_INCSR2_MODE,
+			USB_CTRL_EP_INCSR2);
 }
 
 int serial_putc(uint8_t c)
 {
+	/* Wait for the bus to be idle, so we don't double-xmit */
 	while (readb(USB_CTRL_INTRIN))
-		usb_handle_irqs();
+		;
 
+	/* Select EP1 */
 	writeb(1, USB_CTRL_INDEX);
+
+	/* Add the character to the FIFO */
 	writeb(c, USB_CTRL_EP1_FIFO_DB0);
 	writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
 
+	/* Wait for the character to transmit, so we don't double-xmit */
 	while (!readb(USB_CTRL_INTRIN))
-		usb_handle_irqs();
+		;
 
 	return 0;
 }
 
-static uint8_t *recv_bfr = (uint8_t *)0x70000000;
-static int recv_bfr_size = 0;
-static int recv_bfr_offset = 0;
-
-static void usb_receive(uint8_t endpoint_number)
-{
-	while (!readb(USB_CTRL_INTROUT))
-		usb_handle_irqs();
-
-	/* Wait for an event to happen */
-	writeb(endpoint_number, USB_CTRL_INDEX);
-
-	while (!readb(USB_CTRL_EP_OUTCSR1 & USB_CTRL_EP_OUTCSR1_RXPKTRDY));
-		
-	recv_bfr_size = readb(USB_CTRL_EP_COUNT1) & 0xff;
-	recv_bfr_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0xff00;
-
-	for (recv_bfr_offset = 0; recv_bfr_offset < recv_bfr_size; recv_bfr_offset++)
-		recv_bfr[recv_bfr_offset] = readb(USB_CTRL_EP1_FIFO_DB0);
-
-	recv_bfr_offset = 0;
-
-	/* Clear FIFO */
-	writeb(0, USB_CTRL_EP_OUTCSR1);
-}
-
 uint8_t serial_getc(void)
 {
-	/* Refill the buffer if it's empty */
-	if (recv_bfr_offset == recv_bfr_size)
-		usb_receive(1);
+	/* Wait for data if the buffer is empty */
+	while (recv_offset == recv_size)
+		usb_handle_irqs();
 
-	return recv_bfr[recv_bfr_offset++];
+	return recv_bfr[recv_offset++];
 }
 
 int serial_puts(const void *s)
@@ -233,26 +265,27 @@ int serial_read(void *data, int bytes)
 
 void serial_init(void)
 {
-	/*
 	(void)readb(USB_CTRL_INTROUT);
 	(void)readb(USB_CTRL_INTRIN);
 	(void)readb(USB_CTRL_INTRUSB);
 
-	writeb(0, USB_CTRL_INTROUTE);
 	writeb(USB_CTRL_INTROUTE_EP1_OUT_ENABLE, USB_CTRL_INTROUTE);
+	writeb(USB_CTRL_INTRINE_EP1_IN_ENABLE, USB_CTRL_INTRINE);
 
-	recv_bfr_size = readb(USB_CTRL_EP_COUNT1) & 0xff;
-	recv_bfr_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0xff00;
-
-	for (recv_bfr_offset = 0; recv_bfr_offset < recv_bfr_size; recv_bfr_offset++)
-		recv_bfr[recv_bfr_offset] = readb(USB_CTRL_EP1_FIFO_DB0);
-		*/
+	/* Perform a receive, to drain the buffer */
+	recv_size = readb(USB_CTRL_EP_COUNT1) & 0xff;
+	recv_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0xff00;
+	for (recv_offset = 0; recv_offset < recv_size; recv_offset++)
+		recv_bfr[recv_offset] = readb(USB_CTRL_EP1_FIFO_DB0);
 
 	/* Clear FIFO */
-	//writeb(0, USB_CTRL_EP_OUTCSR1);
+	writeb(0, USB_CTRL_EP_OUTCSR1);
 
-	recv_bfr_offset = 0;
-	recv_bfr_size = 0;
+	/* Wait for an event to happen */
+	writeb(1, USB_CTRL_INDEX);
+
+	recv_offset = 0;
+	recv_size = 0;
 }
 
-#endif /* !UART */
+#endif /* !SERIAL_UART */
