@@ -343,6 +343,7 @@ extern int cmd_msleep(int argc, char **argv);
 extern int cmd_peek(int argc, char **argv);
 extern int cmd_poke(int argc, char **argv);
 extern int cmd_spi(int argc, char **argv);
+extern int cmd_spi_raw(int argc, char **argv);
 extern int cmd_swi(int argc, char **argv);
 extern int cmd_reboot(int argc, char **argv);
 extern int cmd_led(int argc, char **argv);
@@ -395,6 +396,11 @@ static const struct {
 		.func = cmd_spi,
 		.name = "spi",
 		.help = "Manipulate on-board SPI",
+	},
+	{
+		.func = cmd_spi_raw,
+		.name = "spi_raw",
+		.help = "Manipulate on-board SPI (raw interface)",
 	},
 	{
 		.func = cmd_swi,
