@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "bionic.h"
+#include "printf.h"
 typedef unsigned char u_char;
 
 /*
@@ -288,16 +289,17 @@ int _toupper(char c)
 	return c + ('a' - 'A');
 }
 
-void _memset(void *dst0, char val, size_t length)
+void *memset (void *dst0, int val, size_t length)
 {
 	uint8_t *ptr = dst0;
 	while(length--)
 		*ptr++ = val;
+	return dst0;
 }
 
 void __aeabi_memset(void *dst0, char val, size_t length)
 {
-	_memset(dst0, val, length);
+	memset(dst0, val, length);
 }
 
 int _strlen(const char *s)
@@ -333,3 +335,15 @@ void _msleep(uint32_t msecs)
 		}
 	}
 }
+
+int puts(const char *str)
+{
+	printf("%s", str);
+	return 0;
+}
+
+int putchar(int c)
+{
+	printf("%c", c);
+	return 0;
+} 
