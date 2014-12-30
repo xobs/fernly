@@ -2,7 +2,7 @@ include mkenv.mk
 include magic.mk
 
 CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
-	 -Os -ggdb -Iinclude
+	 -Os -ggdb -Iinclude -marm
 AFLAGS = 
 
 LDFLAGS = --nostdlib -T fernvale.ld
@@ -36,6 +36,7 @@ SRC_S = \
 	scriptic/enable-psram.S \
 	scriptic/spi.S \
 	scriptic/spi-blockmode.S \
+	_lshrdi3.S \
 	_udivsi3.S \
 	_divsi3.S \
 	start.S
@@ -51,10 +52,10 @@ clean:
 	$(RM) -rf $(BUILD)
 
 $(BUILD)/fernly-loader: fernly-loader.c
-	$(CC) fernly-loader.c -o $@
+	$(CC_NATIVE) fernly-loader.c -o $@
 
 $(BUILD)/fernly-usb-loader: fernly-usb-loader.c sha1.c sha1.h
-	$(CC) fernly-usb-loader.c sha1.c -o $@
+	$(CC_NATIVE) fernly-usb-loader.c sha1.c -o $@
 
 $(BUILD)/loader.bin: $(BUILD)/loader.o
 	objcopy -S -O binary $(BUILD)/loader.o $@
