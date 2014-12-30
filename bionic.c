@@ -37,6 +37,7 @@
 #include <string.h>
 #include "bionic.h"
 #include "printf.h"
+#include "include/serial.h"
 typedef unsigned char u_char;
 
 /*
@@ -302,6 +303,11 @@ void __aeabi_memset(void *dst0, char val, size_t length)
 	memset(dst0, val, length);
 }
 
+void *__aeabi_memcpy(void *dst0, void *src, size_t length)
+{
+	return memcpy(dst0, src, length);
+}
+
 int _strlen(const char *s)
 {
 	int i = 0;
@@ -338,12 +344,13 @@ void _msleep(uint32_t msecs)
 
 int puts(const char *str)
 {
-	printf("%s", str);
-	return 0;
+	serial_puts(str);
+	serial_putc('\n');
+	return 1;
 }
 
 int putchar(int c)
 {
-	printf("%c", c);
-	return 0;
+	serial_putc(c);
+	return c;
 } 
