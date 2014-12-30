@@ -44,21 +44,13 @@ SRC_S = \
 OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
 
 all: $(BUILD)/firmware.bin \
-	$(BUILD)/loader.bin \
 	$(BUILD)/usb-loader.bin \
-	$(BUILD)/fernly-loader \
 	$(BUILD)/fernly-usb-loader
 clean:
 	$(RM) -rf $(BUILD)
 
-$(BUILD)/fernly-loader: fernly-loader.c
-	$(CC_NATIVE) fernly-loader.c -o $@
-
 $(BUILD)/fernly-usb-loader: fernly-usb-loader.c sha1.c sha1.h
 	$(CC_NATIVE) fernly-usb-loader.c sha1.c -o $@
-
-$(BUILD)/loader.bin: $(BUILD)/loader.o
-	objcopy -S -O binary $(BUILD)/loader.o $@
 
 $(BUILD)/usb-loader.bin: $(BUILD)/usb-loader.o
 	objcopy -S -O binary $(BUILD)/usb-loader.o $@
