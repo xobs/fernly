@@ -96,7 +96,8 @@ static void uart_setreg(int regnum, uint8_t val)
 int serial_putc(uint8_t c)
 {
 	/* Wait for UART to be empty */
-	while (! (uart_getreg(UART_LSR) & 0x20));
+	while (! (uart_getreg(UART_LSR) & 0x20))
+		asm("");
 
 	uart_setreg(UART_RBR, c);
 	return 0;
@@ -104,7 +105,8 @@ int serial_putc(uint8_t c)
 
 uint8_t serial_getc(void)
 {
-	while (! (uart_getreg(UART_LSR) & 0x01));
+	while (! (uart_getreg(UART_LSR) & 0x01))
+		asm("");
 	return uart_getreg(UART_RBR);
 }
 
@@ -155,9 +157,11 @@ void serial_init(void)
 
 #include "fernvale-usb.h"
 
-static uint8_t *recv_bfr = (uint8_t *)0x70000000;
+static volatile uint8_t *recv_bfr = (uint8_t *)0x70000000;
 static int recv_size = 0;
 static int recv_offset = 0;
+
+#pragma GCC optimize ("-O1")
 
 static void usb_receive_wait(uint8_t endpoint_number)
 {
@@ -172,7 +176,8 @@ static void usb_receive_wait(uint8_t endpoint_number)
 	writeb(readb(USB_CTRL_EP_INCSR2) & ~USB_CTRL_EP_INCSR2_MODE,
 			USB_CTRL_EP_INCSR2);
 
-	while (!readb(USB_CTRL_EP_OUTCSR1 & USB_CTRL_EP_OUTCSR1_RXPKTRDY));
+	while (!readb(USB_CTRL_EP_OUTCSR1 & USB_CTRL_EP_OUTCSR1_RXPKTRDY))
+		asm("");
 		
 	recv_size  = (readb(USB_CTRL_EP_COUNT1) << 0) & 0x00ff;
 	recv_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0xff00;
@@ -217,7 +222,7 @@ int serial_putc(uint8_t c)
 {
 	/* Wait for the bus to be idle, so we don't double-xmit */
 	while (readb(USB_CTRL_INTRIN))
-		;
+		asm("");
 
 	/* Select EP1 */
 	writeb(1, USB_CTRL_INDEX);
@@ -228,7 +233,7 @@ int serial_putc(uint8_t c)
 
 	/* Wait for the character to transmit, so we don't double-xmit */
 	while (!readb(USB_CTRL_INTRIN))
-		;
+		asm("");
 
 	return 0;
 }
