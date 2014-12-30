@@ -72,6 +72,7 @@ static int serial_get_line(char *bfr, int len)
                        /* Next two characters are escape codes */
                        uint8_t next = serial_getc();
                        /* Sanity check: next should be '[' */
+		       (void)next;
 
                        next = serial_getc();
                }
