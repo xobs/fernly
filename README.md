@@ -6,22 +6,48 @@ of the Fernvale CPU.  It will likely be disposed of when the system has been
 understood well enough to implement a full operating system.
 
 
-Usage
------
+Building Fernly
+---------------
 
-To compile, simply run "make".
+To compile, simply run "make".  If you're cross-compiling, set CROSS_COMPILE to
+the prefix of your cross compiler.  This is very similar to how to compile for Linux.
 
-To install, use radare2:
+For example:
 
-    $ sudo radare2 fv://
-    [0x00000000]> s 0x3460
-    [0x00003460]> wf .//build/firmware.bin 
+    make CROSS_COMPILE=arm-none-linux-gnueabi-
 
 
-Chip notes
-----------
+Running Fernly
+--------------
 
-The chip memory-maps SPI at offset 0x10000000.
+To run, connect the target device and run the following command:
+
+    ./build/fernly-usb-loader /dev/fernvale ./build/usb-loader.bin ./build/firmware.bin
+
+This will open up /dev/fernvale, load usb-loader.bin as a stage 1 bootloader,
+and then load (and jump to) firmware.bin as stage 2.  Optionally, you can add
+a stage 3 file by specifying it as an additional argument.
+
+
+Linux Notes
+-----------
+
+Since Fernvale is based on a Mediatek chip, ModemManager will, by default,
+try to treat it as a modem and make it available for network connections.
+This is undesirable.
+
+To work around this problem, create a udev rule under /etc/udev/rules.d/
+called 98-fernvale.rules with the following contents:
+
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="0e8d",\
+        ATTRS{idProduct}=="0003",\
+        MODE="0660", SYMLINK+="fernvale"
+
+    ACTION=="add|change", SUBSYSTEM=="usb",\
+        ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="0e8d",\
+        ATTRS{idProduct}=="0003",\
+        ENV{ID_MM_DEVICE_IGNORE}="1"
+
 
 Memory Map
 ----------
