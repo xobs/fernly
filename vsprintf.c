@@ -666,7 +666,7 @@ static int vsnprintf_internal(char *buf, size_t size, const char *fmt,
 		} else if (qualifier == 'Z' || qualifier == 'z') {
 			num = va_arg(args, size_t);
 		} else if (qualifier == 't') {
-			num = va_arg(args, void *);
+			num = (unsigned long) va_arg(args, void *);
 		} else if (qualifier == 'h') {
 			num = (unsigned short) va_arg(args, int);
 			if (flags & SIGN)
