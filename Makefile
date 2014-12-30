@@ -53,14 +53,11 @@ $(BUILD)/fernly-usb-loader: fernly-usb-loader.c sha1.c sha1.h
 	$(CC_NATIVE) fernly-usb-loader.c sha1.c -o $@
 
 $(BUILD)/usb-loader.bin: $(BUILD)/usb-loader.o
-	objcopy -S -O binary $(BUILD)/usb-loader.o $@
-
-$(BUILD)/loader.o: loader.S
-	as loader.S -o $@
+	$(OBJCOPY) -S -O binary $(BUILD)/usb-loader.o $@
 
 HEADER_BUILD = $(BUILD)/genhdr
 $(BUILD)/firmware.bin: $(BUILD)/firmware.elf
-	objcopy -S -O binary $(BUILD)/firmware.elf $@
+	$(OBJCOPY) -S -O binary $(BUILD)/firmware.elf $@
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(LD) $(LDFLAGS) --entry=reset_handler -o $@ $(OBJ) $(LIBS)
