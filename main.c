@@ -446,7 +446,7 @@ int cmd_help(int argc, char **argv)
 		serial_puts(commands[i].name);
 		serial_putc('\t');
 		serial_puts(commands[i].help);
-		serial_puts("\n");
+		serial_putc('\n');
 	}
 	return 0;
 }
