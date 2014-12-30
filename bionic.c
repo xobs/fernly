@@ -286,7 +286,7 @@ int _toupper(char c)
 {
 	if (!_islower(c))
 		return c;
-	return c + ('a' - 'A');
+	return c - ('a' - 'A');
 }
 
 void *memset (void *dst0, int val, size_t length)
