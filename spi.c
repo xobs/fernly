@@ -23,14 +23,14 @@ int spi_cmd_txrx(uint8_t tx_size, uint8_t rx_size,
 {
 	spi_init();
 
-	_memcpy(SPI_DATA, tx_buf, tx_size);
+	memcpy(SPI_DATA, tx_buf, tx_size);
 
 	writel(tx_size, SPI_WRITE_COUNT);
 	writel(rx_size, SPI_READ_COUNT);
 
 	scriptic_run("spi_run");
 
-	_memcpy(rx_buf, SPI_DATA + tx_size, rx_size);
+	memcpy(rx_buf, SPI_DATA + tx_size, rx_size);
 
 	return 0;
 }
