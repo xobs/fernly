@@ -220,6 +220,10 @@ static void usb_handle_irqs(void)
 
 int serial_putc(uint8_t c)
 {
+	/* Fix up linefeeds */
+	if (c == '\n')
+		serial_putc('\r');
+
 	/* Wait for the bus to be idle, so we don't double-xmit */
 	while (readb(USB_CTRL_INTRIN))
 		asm("");
@@ -251,8 +255,6 @@ int serial_puts(const void *s)
 {
 	const char *str = s;
 	while(*str) {
-		if (*str == '\n')
-			serial_putc('\r');
 		serial_putc(*str++);
 	}
 	return 0;
