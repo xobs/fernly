@@ -12,8 +12,8 @@
  */
 
 #include <stdarg.h>
-#include <linux/types.h>
-#include <linux/string.h>
+#include <sys/types.h>
+#include <sys/string.h>
 #include <errno.h>
 #include <stdint.h>
 #include "bionic.h"
