@@ -1192,7 +1192,8 @@ static void cmd_end_fmt(const char *fmt, ...) {
 }
 
 int main(int argc, char **argv) {
-	int serfd, binfd, s1blfd, payloadfd = -1;
+	int serfd, binfd, s1blfd, payloadfd = -1, logfd = -1;
+	char logfilename[20]="fernly.log";
 	uint32_t ret;
 	
 	if ((argc != 4) && (argc != 5)) {
@@ -1389,6 +1390,13 @@ int main(int argc, char **argv) {
 			perror("Failed to set attributes");
 			exit(1);
 		}
+		
+		logfd=open(logfilename,O_WRONLY|O_CREAT|O_APPEND);
+		if(-1 == logfd) {
+			perror("Could not open logfile for writing");
+			exit(1);
+		}
+		
 		while (1) {
 			fd_set rfds;
 			FD_ZERO(&rfds);
