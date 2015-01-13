@@ -1413,8 +1413,10 @@ int main(int argc, char **argv) {
 					char *txt = " \b";
 					write(1, txt, 3);
 				}
-				else
+				else {
 					write(1, &bfr, 1);
+					if(logfd!=-1) write(logfd, &bfr, 1);
+				}
 			}
 			if (FD_ISSET(1, &rfds)) {
 				if (1 != read(1, &bfr, 1))
@@ -1426,6 +1428,6 @@ int main(int argc, char **argv) {
 	return 0;
 #else /* MONITOR_BOOT */
 	close(serfd);
-	return execl("/usr/bin/screen", "screen", argv[1], "115200", NULL);
+	return execl("/usr/bin/screen", "screen", "-L", argv[1], "115200", NULL);
 #endif
 }
