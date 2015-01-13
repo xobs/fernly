@@ -1192,7 +1192,8 @@ static void cmd_end_fmt(const char *fmt, ...) {
 }
 
 int main(int argc, char **argv) {
-	int serfd, binfd, s1blfd, payloadfd = -1;
+	int serfd, binfd, s1blfd, payloadfd = -1, logfd = -1;
+	char logfilename[20] = "fernly.log";
 	uint32_t ret;
 	
 	if ((argc != 4) && (argc != 5)) {
@@ -1389,6 +1390,11 @@ int main(int argc, char **argv) {
 			perror("Failed to set attributes");
 			exit(1);
 		}
+
+		logfd = open(logfilename, O_WRONLY | O_CREAT | O_APPEND);
+		if (-1 == logfd)
+			perror("Warning: could not open logfile for writing");
+
 		while (1) {
 			fd_set rfds;
 			FD_ZERO(&rfds);
@@ -1405,8 +1411,11 @@ int main(int argc, char **argv) {
 					char *txt = " \b";
 					write(1, txt, 3);
 				}
-				else
+				else {
 					write(1, &bfr, 1);
+					if (logfd != -1)
+						write(logfd, &bfr, 1);
+				}
 			}
 			if (FD_ISSET(1, &rfds)) {
 				if (1 != read(1, &bfr, 1))
@@ -1418,6 +1427,7 @@ int main(int argc, char **argv) {
 	return 0;
 #else /* MONITOR_BOOT */
 	close(serfd);
-	return execl("/usr/bin/screen", "screen", argv[1], "115200", NULL);
+	return execl("/usr/bin/screen",
+			"screen", "-L", argv[1], "115200", NULL);
 #endif
 }
