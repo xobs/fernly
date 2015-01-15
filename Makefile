@@ -72,3 +72,7 @@ $(OBJ_DIRS):
 $(HEADER_BUILD):
 	$(MKDIR) -p $@ build/scriptic
 -include $(OBJ:.o=.P)
+
+test:
+	novena-usb-hub -d u1 ; sleep 1; novena-usb-hub -e u1 ; sleep 2
+	./build/fernly-usb-loader /dev/fernvale ./build/usb-loader.bin ./build/firmware.bin
