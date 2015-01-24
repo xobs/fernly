@@ -231,7 +231,7 @@ int fernvale_send_int8_no_response(int fd, uint8_t byte) {
 			perror("Unable to write buffer");
 		else
 			printf("Wanted to write %d bytes, but read %d\n",
-					sizeof(byte), ret);
+					(int) sizeof(byte), ret);
 		return -1;
 	}
 	return 0;
@@ -250,7 +250,7 @@ int fernvale_send_int16_no_response(int fd, uint32_t word) {
 			perror("Unable to write buffer");
 		else
 			printf("Wanted to write %d bytes, but read %d\n",
-					sizeof(bfr), ret);
+					(int) sizeof(bfr), ret);
 		return -1;
 	}
 	return 0;
@@ -271,7 +271,7 @@ int fernvale_send_int32_no_response(int fd, uint32_t word) {
 			perror("Unable to write buffer");
 		else
 			printf("Wanted to write %d bytes, but read %d\n",
-					sizeof(bfr), ret);
+					(int) sizeof(bfr), ret);
 		return -1;
 	}
 	return 0;
@@ -1028,7 +1028,7 @@ static int fernvale_write_stage2(int serfd, int binfd)
 	}
 	else if (ret != bytes_total) {
 		fprintf(stderr, "Shortened write (want: %d got: %d)\n",
-				sizeof(bfr), ret);
+				(int) sizeof(bfr), ret);
 		return -1;
 	}
 	bytes_written = ret;
@@ -1122,7 +1122,7 @@ static int fernvale_write_stage3(int serfd, int binfd)
 	}
 	else if (ret != bytes_total) {
 		fprintf(stderr, "Shortened write (want: %d got: %d)\n",
-				sizeof(bfr), ret);
+				(int) sizeof(bfr), ret);
 		return -1;
 	}
 	bytes_written = ret;
