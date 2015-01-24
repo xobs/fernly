@@ -206,7 +206,9 @@ static int do_init(void)
 	shell_run_command("bl 5");
 	shell_run_command("lcd init");
 	shell_run_command("lcd tpd");
-
+	
+	scriptic_run("set_kbd");
+	
 	return 0;
 }
 
