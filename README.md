@@ -6,6 +6,16 @@ of the Fernvale CPU.  It will likely be disposed of when the system has been
 understood well enough to implement a full operating system.
 
 
+Setting up cross compilation
+----------------------------
+q11
+### Linux
+
+    git clone https://github.com/robertfoss/setup_codesourcery.git
+    sudo setup_codesourcery/setup.sh
+    /usr/local/bin/codesourcery-arm-2014.05.sh
+
+
 Building Fernly
 ---------------
 
