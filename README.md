@@ -8,7 +8,7 @@ understood well enough to implement a full operating system.
 
 Setting up cross compilation
 ----------------------------
-q11
+
 ### Linux
 
     git clone https://github.com/robertfoss/setup_codesourcery.git
