@@ -36,6 +36,7 @@ SRC_S = \
 	scriptic/enable-psram.S \
 	scriptic/spi.S \
 	scriptic/spi-blockmode.S \
+	scriptic/keypad.S \
 	_lshrdi3.S \
 	_udivsi3.S \
 	_divsi3.S \
