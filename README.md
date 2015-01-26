@@ -57,6 +57,10 @@ called 98-fernvale.rules with the following contents:
         ATTRS{idProduct}=="0003",\
         ENV{ID_MM_DEVICE_IGNORE}="1"
 
+OSX Notes
+---------
+The default OSX CDC matching seems to miss the Fernvale board. Use [fernvale-osx-codeless](https://github.com/jacobrosenthal/fernvale-osx-codeless) to get a com port.
+
 
 Memory Map
 ----------
