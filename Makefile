@@ -20,6 +20,7 @@ SRC_C = \
 	cmd-load.c \
 	cmd-bl.c \
 	cmd-lcd.c \
+	cmd-keypad.c \
 	emi.c \
 	irq.c \
 	lcd.c \
@@ -36,6 +37,7 @@ SRC_S = \
 	scriptic/enable-psram.S \
 	scriptic/spi.S \
 	scriptic/spi-blockmode.S \
+	scriptic/keypad.S \
 	_lshrdi3.S \
 	_udivsi3.S \
 	_divsi3.S \

@@ -11,4 +11,17 @@
 #define BIG_LED_ON    (0x3)
 #define BIG_LED_OFF   (0x0)
 
+#define KBD_ADDR		0xA00D0000
+#define KBD_STATUS		(KBD_ADDR + 0x0000)
+#define KBD_MEM1		(KBD_ADDR + 0x4)
+#define KBD_MEM2		(KBD_ADDR + 0x8)
+#define KBD_MEM3		(KBD_ADDR + 0xc)
+#define KBD_MEM4		(KBD_ADDR + 0x10)
+#define KBD_MEM5		(KBD_ADDR + 0x14)
+#define KBD_DEBOUNCING		(KBD_ADDR + 0x18)
+#define KBD_SCAN_TIME_ADJ	(KBD_ADDR + 0x1c)
+#define KBD_1OR2		(KBD_ADDR + 0x20)
+#define KBD_ENABLE		(KBD_ADDR + 0x24)
+
+
 #endif /* __FV_KBD_H__ */

@@ -201,11 +201,13 @@ static int do_init(void)
 
 	scriptic_run("set_plls");
 	scriptic_run("enable_psram");
-
 	serial_puts("\n\nFernly shell\n");
 	shell_run_command("bl 5");
 	shell_run_command("lcd init");
 	shell_run_command("lcd tpd");
+
+	/* Initialize the keypad */
+	scriptic_run("set_kbd");
 
 	return 0;
 }
@@ -352,6 +354,7 @@ extern int cmd_bl(int argc, char **argv);
 extern int cmd_lcd(int argc, char **argv);
 extern int cmd_load(int argc, char **argv);
 extern int cmd_loadjump(int argc, char **argv);
+extern int cmd_keypad(int argc, char **argv);
 
 static const struct {
 	int (*func)(int argc, char **argv);
@@ -433,6 +436,11 @@ static const struct {
 		.name = "loadjmp",
 		.help = "Load data to a specific area in memory, "
 			"then jump to it",
+	},
+	{
+		.func = cmd_keypad,
+		.name = "keypad",
+		.help = "Read keys from keypad until # is pressed ",
 	},
 };
 

@@ -10,12 +10,14 @@ extern struct scriptic enable_psram;
 extern struct scriptic spi_run;
 extern struct scriptic spi_run;
 extern struct scriptic spi_init;
+extern struct scriptic set_kbd;
 
 static struct scriptic *scripts[] = {
 	&set_plls,
 	&enable_psram,
 	&spi_run,
 	&spi_init,
+	&set_kbd,
 };
 
 #ifdef SCRIPTIC_DEBUG
