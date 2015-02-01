@@ -205,10 +205,16 @@ static int do_init(void)
 	shell_run_command("bl 5");
 	shell_run_command("lcd init");
 	shell_run_command("lcd tpd");
+<<<<<<< HEAD
 	serial_puts("set_kbd()\n");
 	scriptic_run("set_kbd");
 
 
+=======
+	
+	scriptic_run("set_kbd");
+	
+>>>>>>> 767cab421be2f613b054557a41c2039178526488
 	return 0;
 }
 

@@ -76,5 +76,9 @@ $(HEADER_BUILD):
 -include $(OBJ:.o=.P)
 
 test:
+<<<<<<< HEAD
 	novena-usb-hub -d u1 ; novena-usb-hub -d d1 ; sleep 1; novena-usb-hub -e u1 ; novena-usb-hub -e d1 ; sleep 2
+=======
+	novena-usb-hub -d u1 ; sleep 1; novena-usb-hub -e u1 ; sleep 2
+>>>>>>> 767cab421be2f613b054557a41c2039178526488
 	./build/fernly-usb-loader /dev/fernvale ./build/usb-loader.bin ./build/firmware.bin
