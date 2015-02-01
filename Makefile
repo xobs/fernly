@@ -2,7 +2,7 @@ include mkenv.mk
 include magic.mk
 
 CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
-	 -Os -ggdb -Iinclude -marm
+	 -Os -ggdb -Iinclude -marm -DSCRIPTIC_DEBUG
 AFLAGS = 
 
 LDFLAGS = --nostdlib -T fernvale.ld
@@ -20,6 +20,7 @@ SRC_C = \
 	cmd-load.c \
 	cmd-bl.c \
 	cmd-lcd.c \
+	cmd-keypad.c \
 	emi.c \
 	irq.c \
 	lcd.c \
@@ -36,6 +37,7 @@ SRC_S = \
 	scriptic/enable-psram.S \
 	scriptic/spi.S \
 	scriptic/spi-blockmode.S \
+	scriptic/keypad.S \
 	_lshrdi3.S \
 	_udivsi3.S \
 	_divsi3.S \
@@ -74,5 +76,9 @@ $(HEADER_BUILD):
 -include $(OBJ:.o=.P)
 
 test:
+<<<<<<< HEAD
+	novena-usb-hub -d u1 ; novena-usb-hub -d d1 ; sleep 1; novena-usb-hub -e u1 ; novena-usb-hub -e d1 ; sleep 2
+=======
 	novena-usb-hub -d u1 ; sleep 1; novena-usb-hub -e u1 ; sleep 2
+>>>>>>> 767cab421be2f613b054557a41c2039178526488
 	./build/fernly-usb-loader /dev/fernvale ./build/usb-loader.bin ./build/firmware.bin
