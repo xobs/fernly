@@ -12,7 +12,7 @@
 
 const char key_vals[] = "LRUDAB123456789*0#";
 
-const uint32_t key_addr[]={
+const uint32_t key_addr[] = {
 	KBD_MEM2,
 	KBD_MEM2,
 	KBD_MEM1,
@@ -30,7 +30,7 @@ const uint32_t key_addr[]={
 	KBD_MEM3,
 	KBD_MEM2,
 	KBD_MEM2,
-	KBD_MEM2
+	KBD_MEM2,
 };
 
 const uint32_t key_mask[] = {
@@ -51,7 +51,7 @@ const uint32_t key_mask[] = {
 	0x0000feff,
 	0x0000dfff,
 	0x0000bfff,
-	0x00007fff
+	0x00007fff,
 };
 
 int cmd_keypad(int argc, char **argv)
