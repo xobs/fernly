@@ -44,7 +44,7 @@ static void sc_print_header(void *p)
 		if (cmd->read32.mask == 0 || cmd->read32.mask == 0xffffffff)
 			printf(" read32 @ 0x%08x", cmd->read32.addr);
 		else
-			printf(" read32 @ 0x%08x, mask 0x%08x, match 0x%008x",
+			printf(" read32 @ 0x%08x, mask 0x%08x, match 0x%08x",
 				cmd->read32.addr,
 				cmd->read32.mask,
 				cmd->read32.match);
@@ -54,7 +54,7 @@ static void sc_print_header(void *p)
 		if (cmd->read16.mask == 0 || cmd->read16.mask == 0xffff)
 			printf(" read16 @ 0x%08x", cmd->read16.addr);
 		else
-			printf(" read16 @ 0x%08x, mask 0x%04x, match 0x%004x",
+			printf(" read16 @ 0x%08x, mask 0x%04x, match 0x%04x",
 				cmd->read16.addr,
 				cmd->read16.mask,
 				cmd->read16.match);
