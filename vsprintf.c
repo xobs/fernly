@@ -13,7 +13,7 @@
 
 #include <stdarg.h>
 #include <sys/types.h>
-#include <sys/string.h>
+#include <string.h>
 #include <errno.h>
 #include <stdint.h>
 #include "bionic.h"
