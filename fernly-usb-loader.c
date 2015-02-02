@@ -1400,27 +1400,27 @@ int main(int argc, char **argv) {
 			FD_ZERO(&rfds);
 
 			FD_SET(serfd, &rfds);
-			FD_SET(1, &rfds);
+			FD_SET(STDIN_FILENO, &rfds);
 
 			select(serfd + 1, &rfds, NULL, NULL, NULL);
 
 			if (FD_ISSET(serfd, &rfds)) {
-				if (1 != read(serfd, &bfr, 1))
+				if (1 != read(serfd, &bfr, sizeof(bfr)))
 					break;
 				if (bfr == 0x7f) {
-					char *txt = " \b";
-					write(1, txt, 3);
+					char txt[] = " \b";
+					write(STDOUT_FILENO, txt, sizeof(txt));
 				}
 				else {
-					write(1, &bfr, 1);
+					write(STDOUT_FILENO, &bfr, sizeof(bfr));
 					if (logfd != -1)
-						write(logfd, &bfr, 1);
+						write(logfd, &bfr, sizeof(bfr));
 				}
 			}
-			if (FD_ISSET(1, &rfds)) {
-				if (1 != read(1, &bfr, 1))
+			if (FD_ISSET(STDIN_FILENO, &rfds)) {
+				if (1 != read(STDIN_FILENO, &bfr, sizeof(bfr)))
 					break;
-				write(serfd, &bfr, 1);
+				write(serfd, &bfr, sizeof(bfr));
 			}
 		}
 	}
