@@ -1426,8 +1426,11 @@ int main(int argc, char **argv) {
 	}
 	return 0;
 #else /* MONITOR_BOOT */
+	cmd_begin("Waiting for ready prompt");
+	fernvale_wait_banner(serfd, prompt, strlen(prompt));
+	cmd_end();
+
 	close(serfd);
-	return execl("/usr/bin/screen",
-			"screen", "-L", argv[1], "115200", NULL);
+	return 0;
 #endif
 }
