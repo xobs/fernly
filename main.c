@@ -450,11 +450,11 @@ int cmd_help(int argc, char **argv)
 
 	printf("Fernly shell help.  Available commands:\n");
 	for (i = 0; i < sizeof(commands) / sizeof(*commands); i++) {
-		serial_putc('\t');
+		serial_puts("\t");
 		serial_puts(commands[i].name);
-		serial_putc('\t');
+		serial_puts("\t");
 		serial_puts(commands[i].help);
-		serial_putc('\n');
+		serial_puts("\n");
 	}
 	return 0;
 }
