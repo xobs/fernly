@@ -532,7 +532,12 @@ static int vsnprintf_internal(char *buf, size_t size, const char *fmt,
 	str = buf;
 
 	for (; *fmt ; ++fmt) {
-		if (*fmt != '%') {
+		if (*fmt == '\n') {
+			ADDCH(str, '\r');
+			ADDCH(str, '\n');
+			continue;
+		}
+		else if (*fmt != '%') {
 			ADDCH(str, *fmt);
 			continue;
 		}
