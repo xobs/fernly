@@ -12,7 +12,6 @@ static int do_flashrom(void)
 	uint8_t in[256];
 
 	serial_putc(0x05);
-	(void)serial_getc(); // Dummy read, necessary for some reason
 
 	while (1) {
 		out_count = serial_getc();
