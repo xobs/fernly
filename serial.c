@@ -160,9 +160,21 @@ void serial_init(void)
 static volatile uint8_t *recv_bfr = (uint8_t *)0x70000000;
 static int recv_size = 0;
 static int recv_offset = 0;
+static int send_max = 0;
+static int send_cur = 0;
 
 #define USB_MODE_OUT 0
 #define USB_MODE_IN 1
+
+static void usb_flush_output(void)
+{
+	writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
+
+	/* Wait for the character to transmit, so we don't double-xmit */
+	while (!readb(USB_CTRL_INTRIN))
+		asm("");
+	send_cur = 0;
+}
 
 static void usb_set_mode(uint8_t epnum, int in)
 {
@@ -204,9 +216,27 @@ static void usb_receive_wait(uint8_t epnum)
 	recv_size  = (readb(USB_CTRL_EP_COUNT1) << 0) & 0x00ff;
 	recv_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0x0300;
 
+	int bytes_to_read = recv_size + 1;
+	recv_offset = 0;
+
 	/* Fill in the receive buffer */
-	for (recv_offset = 0; recv_offset < recv_size; recv_offset++)
-		recv_bfr[recv_offset] = readb(fifo_register);
+	while (bytes_to_read) {
+		if (bytes_to_read >= 4) {
+			*((uint32_t *)(recv_bfr + recv_offset)) = readl(fifo_register);
+			bytes_to_read -= 4;
+			recv_offset += 4;
+		}
+		else if (bytes_to_read >= 2) {
+			*((uint16_t *)(recv_bfr + recv_offset)) = readw(fifo_register);
+			bytes_to_read -= 2;
+			recv_offset += 2;
+		}
+		else {
+			*((uint8_t *)(recv_bfr + recv_offset)) = readb(fifo_register);
+			bytes_to_read -= 1;
+			recv_offset += 1;
+		}
+	}
 	recv_offset = 0;
 
 	/* Clear FIFO (write 0 to RXPKTRDY) */
@@ -224,9 +254,12 @@ static void usb_handle_irqs(int epnum)
 	/* Set endpoint to IN */
 	usb_set_mode(epnum, USB_MODE_IN);
 
+	if (send_cur)
+		usb_flush_output();
+
 	/* Flush the output FIFO if there is data present */
-	while (readb(USB_CTRL_EP_INCSR1) & USB_CTRL_EP_INCSR1_FIFONOTEMPTY)
-		writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
+//	while (readb(USB_CTRL_EP_INCSR1) & USB_CTRL_EP_INCSR1_FIFONOTEMPTY)
+//		writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
 
 	/* Set endpoint to OUT */
 	usb_set_mode(epnum, USB_MODE_OUT);
@@ -241,20 +274,21 @@ static void usb_handle_irqs(int epnum)
 
 int serial_putc(uint8_t c)
 {
+#if 0
 	/* Wait for the bus to be idle, so we don't double-xmit */
 	while (readb(USB_CTRL_INTRIN))
 		asm("");
+#endif
 
 	/* Select EP1 */
-	writeb(1, USB_CTRL_INDEX);
+//	writeb(1, USB_CTRL_INDEX);
 
 	/* Add the character to the FIFO */
 	writeb(c, USB_CTRL_EP1_FIFO_DB0);
-	writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
+	send_cur++;
 
-	/* Wait for the character to transmit, so we don't double-xmit */
-	while (!readb(USB_CTRL_INTRIN))
-		asm("");
+	if (send_cur >= send_max)
+		usb_flush_output();
 
 	return 0;
 }
@@ -304,6 +338,8 @@ int serial_read(void *data, int bytes)
 
 void serial_init(void)
 {
+	send_max = 32;
+	send_cur = 0;
 
 	writel(readl(USB_CTRL_CON) | USB_CTRL_CON_NULLPKT_FIX, USB_CTRL_CON);
 
@@ -324,13 +360,17 @@ void serial_init(void)
 	/* Select EP1 */
 	writeb(1, USB_CTRL_INDEX);
 
+	/* Make sure the packet size is 64 bytes */
+	writeb(send_max, USB_CTRL_EP_INMAXP);
+
 	/* Clear FIFO */
-	writeb(USB_CTRL_EP_INCSR1_FLUSHFIFO, USB_CTRL_EP_OUTCSR1);
+	writeb(USB_CTRL_EP_INCSR1_FLUSHFIFO, USB_CTRL_EP_INCSR1);
 
 	/* Clear the second packet */
-	writeb(USB_CTRL_EP_INCSR1_FLUSHFIFO, USB_CTRL_EP_OUTCSR1);
+	writeb(USB_CTRL_EP_INCSR1_FLUSHFIFO, USB_CTRL_EP_INCSR1);
 
-	/* Reset the IN endpoint control bits */
+	/* Set up FIFO to automatically transmit when the buffer is full */
+	//writeb(USB_CTRL_EP_INCSR2_AUTOSET, USB_CTRL_EP_INCSR2);
 	writeb(0, USB_CTRL_EP_INCSR2);
 
 	recv_offset = 0;
