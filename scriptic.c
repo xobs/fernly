@@ -21,23 +21,13 @@ static struct scriptic *scripts[] = {
 };
 
 #ifdef SCRIPTIC_DEBUG
-static const char *command_names[] = {
-	"end",
-	"read32",
-	"write32",
-	"read16",
-	"write16",
-	"call",
-	"usleep",
-};
-
 static void sc_print_header(void *p)
 {
 	union scriptic_command *cmd = p;
 
-	printf("> %s command", command_names[cmd->header.command]);
 	switch(cmd->header.command) {
 	case sc_end_cmd:
+		printf("end script");
 		break;
 
 	case sc_read32_cmd:
