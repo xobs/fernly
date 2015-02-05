@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <getopt.h>
 
 #include "sha1.h"
 
@@ -18,7 +19,6 @@
 #define STAGE_2_WRITE_SIZE 1
 #define STAGE_3_WRITE_ALL_AT_ONCE 1 /* Write stage 3 in one write() */
 #define STAGE_3_WRITE_SIZE 1
-#define MONITOR_BOOT /* Whether to monitor serial, or call screen */
 #define FERNLY_USB_LOADER_ADDR 0x7000c000
 
 #define ASSERT(x) do { if ((x)) exit(1); } while(0)
@@ -1191,20 +1191,60 @@ static void cmd_end_fmt(const char *fmt, ...) {
 	printf("\n");
 }
 
+static void print_help(const char *name)
+{
+	printf("Usage: %s [-l logfile] [-s] [serial port] "
+			"[stage 1 bootloader] "
+			"[[stage 2 bootloader]] "
+			"[payload]\n", name);
+	printf("\n");
+	printf("Arguments:\n");
+	printf("    -l [logfile]      Log boot output to the specified file\n");
+	printf("    -s                Enter boot shell\n");
+	printf("    -h                Print this help\n");
+	printf("\n");
+	printf("If you don't want a stage 2 bootloader, you may omit "
+		"it, and this program will jump straight to the "
+		"payload, loaded at offset 0x%08x.\n",
+		FERNLY_USB_LOADER_ADDR);
+	printf("\n");
+	printf("The boot shell allows you to interact directly with the stage "
+	       "2 bootloader.  If you omit -s, then this program will exit "
+	       "after loading either the stage 2 bootloader or the payload.\n");
+}
+
 int main(int argc, char **argv) {
 	int serfd, binfd, s1blfd, payloadfd = -1, logfd = -1;
-	char logfilename[20] = "fernly.log";
+	char *logname = NULL;
 	uint32_t ret;
-	
+	int opt;
+	int shell = 0;
+
+	while ((opt = getopt(argc, argv, "hl:s")) != -1) {
+		switch(opt) {
+
+		case 'l':
+			logname = strdup(optarg);
+			break;
+
+		case 's':
+			shell = 1;
+			break;
+
+		default:
+		case 'h':
+			print_help(argv[0]);
+			return 1;
+			break;
+
+		}
+	}
+	printf("optind: %d\n", optind);
+
+	argc -= (optind - 1);
+	argv += (optind - 1);
+
 	if ((argc != 4) && (argc != 5)) {
-		printf("Usage: %s [serial port] "
-				"[stage 1 bootloader] "
-				"[[stage 2 bootloader]] "
-				"[payload]\n", argv[0]);
-		printf("If you don't want a stage 2 bootloader, you may omit "
-			"it, and this program will jump straight to the "
-			"payload, loaded at offset 0x%08x.\n",
-			FERNLY_USB_LOADER_ADDR);
 		exit(1);
 	}
 
@@ -1372,8 +1412,7 @@ int main(int argc, char **argv) {
 		cmd_end();
 	}
 
-#ifdef MONITOR_BOOT
-	{
+	if (shell) {
 		uint8_t bfr;
 		int ret;
 		struct termios t;
@@ -1391,9 +1430,11 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 
-		logfd = open(logfilename, O_WRONLY | O_CREAT | O_APPEND);
-		if (-1 == logfd)
-			perror("Warning: could not open logfile for writing");
+		if (logname) {
+			logfd = open(logname, O_WRONLY | O_CREAT | O_APPEND);
+			if (-1 == logfd)
+				perror("Warning: could not open logfile");
+		}
 
 		while (1) {
 			fd_set rfds;
@@ -1424,13 +1465,11 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	return 0;
-#else /* MONITOR_BOOT */
-	cmd_begin("Waiting for ready prompt");
-	fernvale_wait_banner(serfd, prompt, strlen(prompt));
-	cmd_end();
-
+	else {
+		cmd_begin("Waiting for ready prompt");
+		fernvale_wait_banner(serfd, prompt, strlen(prompt));
+		cmd_end();
+	}
 	close(serfd);
 	return 0;
-#endif
 }
