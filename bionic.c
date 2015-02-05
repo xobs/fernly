@@ -345,6 +345,7 @@ void _msleep(uint32_t msecs)
 int puts(const char *str)
 {
 	serial_puts(str);
+	serial_putc('\r');
 	serial_putc('\n');
 	return 1;
 }
