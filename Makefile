@@ -78,3 +78,7 @@ $(HEADER_BUILD):
 test:
 	novena-usb-hub -d u1 ; sleep 1; novena-usb-hub -e u1 ; sleep 2
 	$(BUILD)/fernly-usb-loader /dev/fernvale $(BUILD)/usb-loader.bin $(BUILD)/firmware.bin
+
+shell:
+	novena-usb-hub -d u1 ; sleep 1; novena-usb-hub -e u1 ; sleep 2
+	$(BUILD)/fernly-usb-loader -s /dev/fernvale $(BUILD)/usb-loader.bin $(BUILD)/firmware.bin
