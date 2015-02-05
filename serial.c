@@ -166,18 +166,10 @@ static int send_cur = 0;
 #define USB_MODE_OUT 0
 #define USB_MODE_IN 1
 
-static void usb_flush_output(void)
-{
-	writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
-
-	/* Wait for the character to transmit, so we don't double-xmit */
-	while (!readb(USB_CTRL_INTRIN))
-		asm("");
-	send_cur = 0;
-}
-
 static void usb_set_mode(uint8_t epnum, int in)
 {
+	writeb(epnum, USB_CTRL_INDEX);
+
 	if (in) {
 		if (readb(USB_CTRL_EP_INCSR2) & USB_CTRL_EP_INCSR2_MODE)
 			/* Already set to "IN" */
@@ -196,6 +188,24 @@ static void usb_set_mode(uint8_t epnum, int in)
 	}
 }
 
+static void usb_flush_output(int epnum)
+{
+	/* Set endpoint to IN */
+	usb_set_mode(epnum, USB_MODE_IN);
+
+	/* Begin transmitting the packet */
+	writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
+
+	/* Wait for the character to transmit, so we don't double-xmit */
+	while (!readb(USB_CTRL_INTRIN))
+		asm("");
+
+	/* Set endpoint back to OUT */
+	usb_set_mode(epnum, USB_MODE_OUT);
+
+	send_cur = 0;
+}
+
 static void usb_receive_wait(uint8_t epnum)
 {
 	uint32_t fifo_register = USB_CTRL_EP0_FIFO_DB0 + (epnum * 4);
@@ -207,37 +217,34 @@ static void usb_receive_wait(uint8_t epnum)
 	/* Select EP1 */
 	writeb(epnum, USB_CTRL_INDEX);
 
-	/* Set endpoint to OUT */
-	usb_set_mode(epnum, USB_MODE_OUT);
-
 	while (!(readb(USB_CTRL_EP_OUTCSR1) & USB_CTRL_EP_OUTCSR1_RXPKTRDY))
 		asm("");
 
 	recv_size  = (readb(USB_CTRL_EP_COUNT1) << 0) & 0x00ff;
 	recv_size |= (readb(USB_CTRL_EP_COUNT2) << 8) & 0x0300;
+	recv_offset = 0;
 
 	int bytes_to_read = recv_size + 1;
-	recv_offset = 0;
+	int off = 0;
 
 	/* Fill in the receive buffer */
 	while (bytes_to_read) {
 		if (bytes_to_read >= 4) {
-			*((uint32_t *)(recv_bfr + recv_offset)) = readl(fifo_register);
+			*((uint32_t *)(recv_bfr + off)) = readl(fifo_register);
 			bytes_to_read -= 4;
-			recv_offset += 4;
+			off += 4;
 		}
 		else if (bytes_to_read >= 2) {
-			*((uint16_t *)(recv_bfr + recv_offset)) = readw(fifo_register);
+			*((uint16_t *)(recv_bfr + off)) = readw(fifo_register);
 			bytes_to_read -= 2;
-			recv_offset += 2;
+			off += 2;
 		}
 		else {
-			*((uint8_t *)(recv_bfr + recv_offset)) = readb(fifo_register);
+			*((uint8_t *)(recv_bfr + off)) = readb(fifo_register);
 			bytes_to_read -= 1;
-			recv_offset += 1;
+			off += 1;
 		}
 	}
-	recv_offset = 0;
 
 	/* Clear FIFO (write 0 to RXPKTRDY) */
 	writeb(0, USB_CTRL_EP_OUTCSR1);
@@ -251,44 +258,23 @@ static void usb_handle_irqs(int epnum)
 	/* Select EP1 */
 	writeb(epnum, USB_CTRL_INDEX);
 
-	/* Set endpoint to IN */
-	usb_set_mode(epnum, USB_MODE_IN);
-
+	/* If data exists in the output FIFOs, send the packet */
 	if (send_cur)
-		usb_flush_output();
-
-	/* Flush the output FIFO if there is data present */
-//	while (readb(USB_CTRL_EP_INCSR1) & USB_CTRL_EP_INCSR1_FIFONOTEMPTY)
-//		writeb(USB_CTRL_EP_INCSR1_INPKTRDY, USB_CTRL_EP_INCSR1);
-
-	/* Set endpoint to OUT */
-	usb_set_mode(epnum, USB_MODE_OUT);
+		usb_flush_output(epnum);
 
 	/* If there are incoming bytes, read them into the buffer */
 	if (readb(USB_CTRL_EP_OUTCSR1) & USB_CTRL_EP_OUTCSR1_RXPKTRDY)
 		usb_receive_wait(epnum);
-
-	/* Set endpoint back to IN to await incoming packets */
-	usb_set_mode(epnum, USB_MODE_IN);
 }
 
 int serial_putc(uint8_t c)
 {
-#if 0
-	/* Wait for the bus to be idle, so we don't double-xmit */
-	while (readb(USB_CTRL_INTRIN))
-		asm("");
-#endif
-
-	/* Select EP1 */
-//	writeb(1, USB_CTRL_INDEX);
-
 	/* Add the character to the FIFO */
 	writeb(c, USB_CTRL_EP1_FIFO_DB0);
 	send_cur++;
 
 	if (send_cur >= send_max)
-		usb_flush_output();
+		usb_flush_output(1);
 
 	return 0;
 }
@@ -372,6 +358,9 @@ void serial_init(void)
 	/* Set up FIFO to automatically transmit when the buffer is full */
 	//writeb(USB_CTRL_EP_INCSR2_AUTOSET, USB_CTRL_EP_INCSR2);
 	writeb(0, USB_CTRL_EP_INCSR2);
+
+	/* Set the USB mode to OUT, to ensure we receive packets from host */
+	usb_set_mode(1, USB_MODE_OUT);
 
 	recv_offset = 0;
 	recv_size = 0;
