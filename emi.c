@@ -45,7 +45,7 @@ static int psram_test_run(uint32_t addr, uint32_t length, uint16_t pattern)
 			if (readl(EMI_CTRL_MBISTD) & EMI_CTRL_MBISTD_FINISHED)
 				break;
 
-		/* If it didn't finis, try again */
+		/* If it didn't finish, try again */
 		if (!(readl(EMI_CTRL_MBISTD) & EMI_CTRL_MBISTD_FINISHED))
 			continue;
 
@@ -94,15 +94,23 @@ static void psram_set_ganged_dqs(uint8_t delay)
 	writel(vals, EMI_CTRL_IDLE);
 }
 
+int dqy_delay;
+int dqy_delay_upper;
+int dqy_delay_lower;
+
+int dqs_delay;
+int dqs_delay_upper;
+int dqs_delay_lower;
+
 int calibrate_psram(void)
 {
-	int dqy_delay;
-	int dqy_delay_upper = -1;
-	int dqy_delay_lower = -1;
+	dqy_delay = -1;
+	dqy_delay_upper = -1;
+	dqy_delay_lower = -1;
 
-	int dqs_delay;
-	int dqs_delay_upper = -1;
-	int dqs_delay_lower = -1;
+	dqs_delay = -1;
+	dqs_delay_upper = -1;
+	dqs_delay_lower = -1;
 
 	for (dqy_delay = 0; dqy_delay < 32; dqy_delay++) {
 
@@ -140,6 +148,9 @@ int calibrate_psram(void)
 			return 1;
 		}
 	}
+
+	if (-1 == dqs_delay_lower)
+		dqs_delay = -1;
 
 	if (-1 == dqs_delay_upper)
 		dqs_delay_upper = dqs_delay_lower;
