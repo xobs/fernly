@@ -10,39 +10,31 @@ extern struct scriptic enable_psram;
 extern struct scriptic spi_run;
 extern struct scriptic spi_run;
 extern struct scriptic spi_init;
+extern struct scriptic set_kbd;
 
 static struct scriptic *scripts[] = {
 	&set_plls,
 	&enable_psram,
 	&spi_run,
 	&spi_init,
+	&set_kbd,
 };
 
 #ifdef SCRIPTIC_DEBUG
-static const char *command_names[] = {
-	"end",
-	"read32",
-	"write32",
-	"read16",
-	"write16",
-	"call",
-	"usleep",
-};
-
 static void sc_print_header(void *p)
 {
 	union scriptic_command *cmd = p;
 
-	printf("> %s command", command_names[cmd->header.command]);
 	switch(cmd->header.command) {
 	case sc_end_cmd:
+		printf("end script");
 		break;
 
 	case sc_read32_cmd:
 		if (cmd->read32.mask == 0 || cmd->read32.mask == 0xffffffff)
 			printf(" read32 @ 0x%08x", cmd->read32.addr);
 		else
-			printf(" read32 @ 0x%08x, mask 0x%08x, match 0x%008x",
+			printf(" read32 @ 0x%08x, mask 0x%08x, match 0x%08x",
 				cmd->read32.addr,
 				cmd->read32.mask,
 				cmd->read32.match);
@@ -52,7 +44,7 @@ static void sc_print_header(void *p)
 		if (cmd->read16.mask == 0 || cmd->read16.mask == 0xffff)
 			printf(" read16 @ 0x%08x", cmd->read16.addr);
 		else
-			printf(" read16 @ 0x%08x, mask 0x%04x, match 0x%004x",
+			printf(" read16 @ 0x%08x, mask 0x%04x, match 0x%04x",
 				cmd->read16.addr,
 				cmd->read16.mask,
 				cmd->read16.match);

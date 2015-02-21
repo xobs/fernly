@@ -20,6 +20,15 @@ load_program:
 	adr	r0, size_buffer
 	mov	r1, #4
 	mvn	r2, #0
+# This function address was discovered by disassembling the ROM, which
+# begins around offset 0xfff00000.  When the MTK Flash Tool loads code into
+# an unflashed MTK chip, it makes calls to a few well-defined positions that
+# contain pointers to read a buffer, write a buffer, and flush the current
+# write buffer.  The programming interface is the same for both USB and
+# serial.  However, since the MT6260 series of parts primarily boots
+# off of USB, we are only interested in the USB thunks.
+# The prototype for this function is:
+#	void usb_uart_read(void *buffer, int bytes, int timeout)
 	ldr	r3, =0xfff03639
 	blx	r3
 
@@ -62,11 +71,13 @@ uart_puts_count_chars_loop:
 uart_puts_print:
 	mvn	r2, #0
 
-	// Call usb_uart_write(char *data, int bytes, int timeout)
+# Call:
+# void usb_uart_write(char *data, int bytes, int timeout)
 	ldr	r3, =0xfff03653
 	blx	r3
 
-	// Call usb_uart_flush
+# Call:
+# void usb_uart_flush(void)
 	ldr	r3, =0xfff04845
 	blx	r3
 

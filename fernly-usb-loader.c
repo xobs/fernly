@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <getopt.h>
 
 #include "sha1.h"
 
@@ -18,7 +19,6 @@
 #define STAGE_2_WRITE_SIZE 1
 #define STAGE_3_WRITE_ALL_AT_ONCE 1 /* Write stage 3 in one write() */
 #define STAGE_3_WRITE_SIZE 1
-#define MONITOR_BOOT /* Whether to monitor serial, or call screen */
 #define FERNLY_USB_LOADER_ADDR 0x7000c000
 
 #define ASSERT(x) do { if ((x)) exit(1); } while(0)
@@ -231,7 +231,7 @@ int fernvale_send_int8_no_response(int fd, uint8_t byte) {
 			perror("Unable to write buffer");
 		else
 			printf("Wanted to write %d bytes, but read %d\n",
-					sizeof(byte), ret);
+					(int) sizeof(byte), ret);
 		return -1;
 	}
 	return 0;
@@ -250,7 +250,7 @@ int fernvale_send_int16_no_response(int fd, uint32_t word) {
 			perror("Unable to write buffer");
 		else
 			printf("Wanted to write %d bytes, but read %d\n",
-					sizeof(bfr), ret);
+					(int) sizeof(bfr), ret);
 		return -1;
 	}
 	return 0;
@@ -271,7 +271,7 @@ int fernvale_send_int32_no_response(int fd, uint32_t word) {
 			perror("Unable to write buffer");
 		else
 			printf("Wanted to write %d bytes, but read %d\n",
-					sizeof(bfr), ret);
+					(int) sizeof(bfr), ret);
 		return -1;
 	}
 	return 0;
@@ -1028,7 +1028,7 @@ static int fernvale_write_stage2(int serfd, int binfd)
 	}
 	else if (ret != bytes_total) {
 		fprintf(stderr, "Shortened write (want: %d got: %d)\n",
-				sizeof(bfr), ret);
+				(int) sizeof(bfr), ret);
 		return -1;
 	}
 	bytes_written = ret;
@@ -1122,7 +1122,7 @@ static int fernvale_write_stage3(int serfd, int binfd)
 	}
 	else if (ret != bytes_total) {
 		fprintf(stderr, "Shortened write (want: %d got: %d)\n",
-				sizeof(bfr), ret);
+				(int) sizeof(bfr), ret);
 		return -1;
 	}
 	bytes_written = ret;
@@ -1191,20 +1191,60 @@ static void cmd_end_fmt(const char *fmt, ...) {
 	printf("\n");
 }
 
+static void print_help(const char *name)
+{
+	printf("Usage: %s [-l logfile] [-s] [serial port] "
+			"[stage 1 bootloader] "
+			"[[stage 2 bootloader]] "
+			"[payload]\n", name);
+	printf("\n");
+	printf("Arguments:\n");
+	printf("    -l [logfile]      Log boot output to the specified file\n");
+	printf("    -s                Enter boot shell\n");
+	printf("    -h                Print this help\n");
+	printf("\n");
+	printf("If you don't want a stage 2 bootloader, you may omit "
+		"it, and this program will jump straight to the "
+		"payload, loaded at offset 0x%08x.\n",
+		FERNLY_USB_LOADER_ADDR);
+	printf("\n");
+	printf("The boot shell allows you to interact directly with the stage "
+	       "2 bootloader.  If you omit -s, then this program will exit "
+	       "after loading either the stage 2 bootloader or the payload.\n");
+}
+
 int main(int argc, char **argv) {
 	int serfd, binfd, s1blfd, payloadfd = -1, logfd = -1;
-	char logfilename[20] = "fernly.log";
+	char *logname = NULL;
 	uint32_t ret;
-	
+	int opt;
+	int shell = 0;
+
+	while ((opt = getopt(argc, argv, "hl:s")) != -1) {
+		switch(opt) {
+
+		case 'l':
+			logname = strdup(optarg);
+			break;
+
+		case 's':
+			shell = 1;
+			break;
+
+		default:
+		case 'h':
+			print_help(argv[0]);
+			return 1;
+			break;
+
+		}
+	}
+	printf("optind: %d\n", optind);
+
+	argc -= (optind - 1);
+	argv += (optind - 1);
+
 	if ((argc != 4) && (argc != 5)) {
-		printf("Usage: %s [serial port] "
-				"[stage 1 bootloader] "
-				"[[stage 2 bootloader]] "
-				"[payload]\n", argv[0]);
-		printf("If you don't want a stage 2 bootloader, you may omit "
-			"it, and this program will jump straight to the "
-			"payload, loaded at offset 0x%08x.\n",
-			FERNLY_USB_LOADER_ADDR);
 		exit(1);
 	}
 
@@ -1372,8 +1412,7 @@ int main(int argc, char **argv) {
 		cmd_end();
 	}
 
-#ifdef MONITOR_BOOT
-	{
+	if (shell) {
 		uint8_t bfr;
 		int ret;
 		struct termios t;
@@ -1391,43 +1430,46 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 
-		logfd = open(logfilename, O_WRONLY | O_CREAT | O_APPEND);
-		if (-1 == logfd)
-			perror("Warning: could not open logfile for writing");
+		if (logname) {
+			logfd = open(logname, O_WRONLY | O_CREAT | O_APPEND);
+			if (-1 == logfd)
+				perror("Warning: could not open logfile");
+		}
 
 		while (1) {
 			fd_set rfds;
 			FD_ZERO(&rfds);
 
 			FD_SET(serfd, &rfds);
-			FD_SET(1, &rfds);
+			FD_SET(STDIN_FILENO, &rfds);
 
 			select(serfd + 1, &rfds, NULL, NULL, NULL);
 
 			if (FD_ISSET(serfd, &rfds)) {
-				if (1 != read(serfd, &bfr, 1))
+				if (1 != read(serfd, &bfr, sizeof(bfr)))
 					break;
 				if (bfr == 0x7f) {
-					char *txt = " \b";
-					write(1, txt, 3);
+					char txt[] = " \b";
+					write(STDOUT_FILENO, txt, sizeof(txt));
 				}
 				else {
-					write(1, &bfr, 1);
+					write(STDOUT_FILENO, &bfr, sizeof(bfr));
 					if (logfd != -1)
-						write(logfd, &bfr, 1);
+						write(logfd, &bfr, sizeof(bfr));
 				}
 			}
-			if (FD_ISSET(1, &rfds)) {
-				if (1 != read(1, &bfr, 1))
+			if (FD_ISSET(STDIN_FILENO, &rfds)) {
+				if (1 != read(STDIN_FILENO, &bfr, sizeof(bfr)))
 					break;
-				write(serfd, &bfr, 1);
+				write(serfd, &bfr, sizeof(bfr));
 			}
 		}
 	}
-	return 0;
-#else /* MONITOR_BOOT */
+	else {
+		cmd_begin("Waiting for ready prompt");
+		fernvale_wait_banner(serfd, prompt, strlen(prompt));
+		cmd_end();
+	}
 	close(serfd);
-	return execl("/usr/bin/screen",
-			"screen", "-L", argv[1], "115200", NULL);
-#endif
+	return 0;
 }

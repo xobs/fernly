@@ -3,6 +3,10 @@
 
 	sc_new "enable_psram", 1, 0, 0
 
+	/* Unclear what these do, but required on some chips */
+	sc_write32 0x39320d61, 0, EMI_CTRL_CONB
+	sc_write32 0x400, 0x400, EMI_CTRL_CONF
+
 	sc_write32 0x401, 0, EMI_CTRL_GENA
 
 	/* Remap EMI to 0x10000000, and SPI to 0x00000000 */

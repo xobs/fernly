@@ -4,6 +4,28 @@
 #include "printf.h"
 #include "spi.h"
 
+static int do_flashrom(void)
+{
+	uint8_t out_count;
+	uint8_t in_count;
+	uint8_t out[256];
+	uint8_t in[256];
+
+	serial_putc(0x05);
+
+	while (1) {
+		out_count = serial_getc();
+		in_count = serial_getc();
+
+		if ((!in_count) && (!out_count))
+			return 0;
+
+		serial_read(out, out_count);
+		spi_cmd_txrx(out_count, in_count, out, in);
+		serial_write(in, in_count);
+	}
+}
+
 int cmd_spi(int argc, char **argv)
 {
 	uint32_t recv_bytes_count;
@@ -21,13 +43,17 @@ int cmd_spi(int argc, char **argv)
 		return 0;
 	}
 
+	if (argc > 0 && !_strcasecmp(argv[0], "flashrom"))
+		return do_flashrom();
+
 	if (argc < 2) {
 		printf("Send SPI bytes out and read the response.\n");
 		printf("Usage:\n");
 		printf(" spi [count] [byte 1] [byte 2] ...\n");
 		printf("     Where \"count\" is the number of bytes to expect"
 			     " in response.\n");
-		printf(" spi id   -- get device id\n");
+		printf(" spi id         get device id\n");
+		printf(" spi flashrom   enter 'flashrom' prog mode\n");
 		return 1;
 	}
 

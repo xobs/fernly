@@ -6,6 +6,15 @@ of the Fernvale CPU.  It will likely be disposed of when the system has been
 understood well enough to implement a full operating system.
 
 
+Setting up cross compilation
+----------------------------
+### Linux
+
+    git clone https://github.com/robertfoss/setup_codesourcery.git
+    sudo setup_codesourcery/setup.sh
+    /usr/local/bin/codesourcery-arm-2014.05.sh
+
+
 Building Fernly
 ---------------
 
@@ -47,6 +56,40 @@ called 98-fernvale.rules with the following contents:
         ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="0e8d",\
         ATTRS{idProduct}=="0003",\
         ENV{ID_MM_DEVICE_IGNORE}="1"
+
+OSX Notes
+---------
+The default OSX CDC matching seems to miss the Fernvale board. Use [fernvale-osx-codeless](https://github.com/jacobrosenthal/fernvale-osx-codeless) to get a com port.
+
+
+SPI and Flashrom
+----------------
+
+Fernly includes a special 'flashrom' mode that allows for direct communication
+with the flashrom program to manipulate the onboard SPI.  The protocol is
+binary, and can be entered by issuing the following command:
+
+    spi flashrom
+
+Fernly will respond with a binary 0x05, indicating it is ready.
+
+The format of the protocol is very simple.  The host writes the number of bytes
+to write, then the number of bytes to read, and then writes the data to send
+to the flash chip.  It then reads the requested number of bytes.  For
+example, to send a 2-byte command '0xfe 0xfa' followed by a 3-byte response,
+write the following data to the serial port:
+
+| 02 03 fe fa |
+
+Then read three bytes of data from the serial port.
+
+A maximum of 255 bytes may be transmitted and received at one time, though
+in practice these numbers may be smaller.
+
+To exit 'spi flashrom' mode and return to fernly, read/write zero bytes.
+That is, send the following packet:
+
+| 00 00 |
 
 
 Memory Map

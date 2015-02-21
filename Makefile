@@ -20,6 +20,7 @@ SRC_C = \
 	cmd-load.c \
 	cmd-bl.c \
 	cmd-lcd.c \
+	cmd-keypad.c \
 	emi.c \
 	irq.c \
 	lcd.c \
@@ -36,6 +37,7 @@ SRC_S = \
 	scriptic/enable-psram.S \
 	scriptic/spi.S \
 	scriptic/spi-blockmode.S \
+	scriptic/keypad.S \
 	_lshrdi3.S \
 	_udivsi3.S \
 	_divsi3.S \
@@ -73,6 +75,10 @@ $(HEADER_BUILD):
 	$(MKDIR) -p $@ build/scriptic
 -include $(OBJ:.o=.P)
 
-test:
+test: all
 	novena-usb-hub -d u1 ; sleep 1; novena-usb-hub -e u1 ; sleep 2
-	./build/fernly-usb-loader /dev/fernvale ./build/usb-loader.bin ./build/firmware.bin
+	$(BUILD)/fernly-usb-loader /dev/fernvale $(BUILD)/usb-loader.bin $(BUILD)/firmware.bin
+
+shell: all
+	novena-usb-hub -d u1 ; sleep 1; novena-usb-hub -e u1 ; sleep 2
+	$(BUILD)/fernly-usb-loader -s /dev/fernvale $(BUILD)/usb-loader.bin $(BUILD)/firmware.bin
