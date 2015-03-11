@@ -2,6 +2,8 @@
 #include "serial.h"
 #include "memio.h"
 
+#define FIFO_MAX 1
+
 #define SERIAL_USB
 
 #ifdef SERIAL_UART
@@ -324,7 +326,7 @@ int serial_read(void *data, int bytes)
 
 void serial_init(void)
 {
-	send_max = 32;
+	send_max = FIFO_MAX;
 	send_cur = 0;
 
 	writel(readl(USB_CTRL_CON) | USB_CTRL_CON_NULLPKT_FIX, USB_CTRL_CON);
