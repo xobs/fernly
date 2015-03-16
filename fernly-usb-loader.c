@@ -1173,7 +1173,10 @@ static int fernvale_write_stage3(int serfd, int binfd)
 }
 
 static void cmd_begin(const char *msg) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
 	printf(msg);
+#pragma GCC diagnostic pop
 	printf("... ");
 	fflush(stdout);
 }
