@@ -1203,6 +1203,7 @@ static void print_help(const char *name)
 	printf("\n");
 	printf("Arguments:\n");
 	printf("    -l [logfile]      Log boot output to the specified file\n");
+	printf("    -w                Wait for serial port to appear\n");
 	printf("    -s                Enter boot shell\n");
 	printf("    -h                Print this help\n");
 	printf("\n");
@@ -1222,8 +1223,9 @@ int main(int argc, char **argv) {
 	uint32_t ret;
 	int opt;
 	int shell = 0;
+	int wait_serial = 0;
 
-	while ((opt = getopt(argc, argv, "hl:s")) != -1) {
+	while ((opt = getopt(argc, argv, "hl:sw")) != -1) {
 		switch(opt) {
 
 		case 'l':
@@ -1232,6 +1234,10 @@ int main(int argc, char **argv) {
 
 		case 's':
 			shell = 1;
+			break;
+
+		case 'w':
+			wait_serial = 1;
 			break;
 
 		default:
@@ -1251,10 +1257,27 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	serfd = open(argv[1], O_RDWR);
-	if (-1 == serfd) {
-		perror("Unable to open serial port");
-		exit(1);
+	if (wait_serial) {
+		printf("Waiting for serial port to connect: .");
+		fflush(stdout);
+	}
+	while (1) {
+		serfd = open(argv[1], O_RDWR);
+		if (-1 == serfd) {
+			if (wait_serial) {
+				printf(".");
+				fflush(stdout);
+				sleep(1);
+				continue;
+			} else {
+				perror("Unable to open serial port");
+				exit(1);
+			}
+		}
+		break;
+	}
+	if (wait_serial) {
+		printf("\n");
 	}
 
 	s1blfd = open(argv[2], O_RDONLY);
