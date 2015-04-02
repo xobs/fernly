@@ -92,6 +92,23 @@ That is, send the following packet:
 | 00 00 |
 
 
+Licensing
+---------
+
+Fernly is licensed under the BSD 2-clause license (see LICENSE).
+
+Previous versions of fernly linked against division libraries taken from U-Boot,
+which were licensed under GPL-2.  These files have been removed.
+
+Instead, we supply a version of libgcc.a.  This file was extracted from a
+standard gcc toolchain, specifically:
+
+    https://code.google.com/p/yus-repo/downloads/detail?name=arm-none-eabi-4.6-armv5.tar.gz
+
+It has not been modified, and its distribution here should be covered under
+the "runtime exception".
+
+
 Memory Map
 ----------
 

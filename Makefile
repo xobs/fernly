@@ -6,7 +6,7 @@ CFLAGS = -march=armv5te -mfloat-abi=soft -Wall \
 AFLAGS = 
 
 LDFLAGS = --nostdlib -T fernvale.ld
-LIBS =
+LIBS = lib/libgcc-armv5.a
 
 SRC_C = \
 	bionic.c \
@@ -38,9 +38,6 @@ SRC_S = \
 	scriptic/spi.S \
 	scriptic/spi-blockmode.S \
 	scriptic/keypad.S \
-	_lshrdi3.S \
-	_udivsi3.S \
-	_divsi3.S \
 	start.S
 
 OBJ = $(addprefix $(BUILD)/, $(SRC_S:.S=.o) $(SRC_C:.c=.o))
