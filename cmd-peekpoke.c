@@ -15,8 +15,10 @@ int cmd_peek(int argc, char **argv)
 
 	offset = strtoul(argv[0], NULL, 0);
 
+#pragma GCC diagnostic ignored "-Wformat"
 	printf("Value at 0x%08x: ", offset);
 	printf("0x%08x\n", *((volatile uint32_t *)offset));
+#pragma GCC diagnostic pop
 	return 0;
 }
 
@@ -33,8 +35,10 @@ int cmd_poke(int argc, char **argv)
 	offset = strtoul(argv[0], NULL, 0);
 	val = strtoul(argv[1], NULL, 0);
 
+#pragma GCC diagnostic ignored "-Wformat"
 	printf("Setting value at 0x%08x to 0x%08x: ", offset, val);
-	writel(val, offset);
+#pragma GCC diagnostic pop
+    writel(val, offset);
 	printf("Ok\n");
 
 	return 0;
