@@ -100,6 +100,12 @@ uint8_t serial_getc(void)
 	return uart_getreg(UART_RBR);
 }
 
+/* Return true if there's pending received char */
+int serial_available(void)
+{
+	return uart_getreg(UART_LSR) & 0x01;
+}
+
 int serial_puts(const void *s)
 {
 	const char *str = s;
@@ -277,6 +283,12 @@ uint8_t serial_getc(void)
 
 	recv_size--;
 	return recv_bfr[recv_offset++];
+}
+
+int serial_available(void)
+{
+	usb_handle_irqs(1);
+	return recv_size != 0;
 }
 
 int serial_puts(const void *s)

@@ -9,6 +9,7 @@ void serial_puth(uint32_t hex, int digits); /* Put hex */
 void serial_write(const void *d, int bytes);
 
 uint8_t serial_getc(void);
+int serial_available(void);
 int serial_print_hex(const void *bfr, int count);
 int serial_read(void *data, int bytes);
 
