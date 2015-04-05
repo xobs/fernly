@@ -39,7 +39,7 @@
 
 	sc_write32 0x400, 0x400, EMI_CTRL_GENA
 
-	/* Now map EMI back to 0x00000000, and SPI to 0x00000000 */
+	/* Now map EMI back to 0x00000000, and SPI to 0x10000000 */
 	sc_write32 3, 0, EMI_CTRL_REMAP
 	sc_usleep 50
 
