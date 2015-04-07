@@ -205,7 +205,7 @@ static void lcd_fill_cmd_buffer(void)
 	/* Memory write */
 	lcd_slot(SLOT_CMD, 0x2c, ncommands++);
 
-	/* Count the number of cmmands and add it to AUTOCOPY_CTRL */
+	/* Count the number of commands and add it to AUTOCOPY_CTRL */
 	writel((readl(LCD_AUTOCOPY_CTRL_REG)
 		& ~LCD_AUTOCOPY_CTRL_CMD_COUNT_MASK)
 		| ((ncommands - 1) << LCD_AUTOCOPY_CTRL_CMD_COUNT_SHIFT),
