@@ -53,15 +53,17 @@ enum mtk_commands {
 	mtk_firmware_version = 0xff,
 };
 
+/* "general file header", struct gfh_header is actually a lead-in
+   for different header types (as specified by type field). */
 struct gfh_header {
-	uint32_t magic_ver;
-	uint16_t size;
-	uint16_t type;
+	uint32_t magic_ver; /* 'MMM', highest byte - version */
+	uint16_t size;      /* Total header size, incl. struct gfh_header */
+	uint16_t type;      /* 0 - gfh_file_info */
 };
 
 struct gfh_file_info {
 	struct gfh_header header;
-	uint8_t         id[12]; /* include '\0' */
+	uint8_t         id[12]; /* "FILE_INFO", zero-padded */
 	uint32_t        file_ver;
 	uint16_t        file_type;
 	uint8_t         flash_dev;
