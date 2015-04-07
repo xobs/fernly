@@ -1175,8 +1175,7 @@ static int fernvale_write_stage3(int serfd, int binfd)
 }
 
 static void cmd_begin(const char *msg) {
-	printf(msg);
-	printf("... ");
+	printf("%s... ", msg);
 	fflush(stdout);
 }
 
