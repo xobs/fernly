@@ -59,9 +59,9 @@ int cmd_keypad(int argc, char **argv)
 	int end = 0;
 	uint32_t key_state[18] = {0};
 
-	printf("Press %c on keypad to exit\n",
+	printf("Press %c on keypad or any key on serial to exit\n",
 		key_vals[ARRAY_SIZE(key_vals) - 2]);
-	while (!end) {
+	while (!end && !serial_available()) {
 		int key;
 
 		for (key = 0; key < (ARRAY_SIZE(key_vals) - 1); key++) {
