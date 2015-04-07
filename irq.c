@@ -130,9 +130,7 @@ void irq_dispatch(void)
 	printf("Dispatching IRQs...\n");
 	reg = IRQ_BASE + IRQ_STATUS_OFF;
 	val = readl(reg);
-#pragma GCC diagnostic ignored "-Wformat"
 	printf("Lower Mask: 0x%08x\n", val);
-#pragma GCC diagnostic pop
 
 	for (i = 0; i < 32; i++)
 		if (val & (1 << i))
@@ -140,10 +138,7 @@ void irq_dispatch(void)
 
 	reg += IRQ_BASE + IRQ_STATUS_OFF + 4;
 	val = readl(reg);
-#pragma GCC diagnostic ignored "-Wformat"
-    printf("Upper Mask: 0x%08x\n", val);
-#pragma GCC diagnostic pop
-
+	printf("Upper Mask: 0x%08x\n", val);
 	for (i = 0; i < (__irq_max__ - 32); i++)
 		if (val & (1 << i))
 			irq_dispatch_one(32 + i);

@@ -29,11 +29,11 @@ static void lcd_cmd_slot(uint16_t cmd, uint8_t slot)
 {
 	writel(cmd | 0x800000, LCD_CMD_LIST_ADDR + (slot * 4));
 }
-#pragma GCC diagnostic ignored "-Wunused-function"
 static void lcd_dat_slot(uint16_t dat, uint8_t slot)
 {
 	writel(dat, LCD_CMD_LIST_ADDR + (slot * 4));
 }
+
 static void lcd_setup_gpio(void)
 {
 	/* LPCE0, LPTE0, LPRSTB */
