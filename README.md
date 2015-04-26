@@ -31,7 +31,7 @@ Running Fernly
 
 To run, connect the target device and run the following command:
 
-    ./build/fernly-usb-loader /dev/fernvale ./build/usb-loader.bin ./build/firmware.bin
+    ./build/fernly-usb-loader -s /dev/fernvale ./build/usb-loader.bin ./build/firmware.bin
 
 This will open up /dev/fernvale, load usb-loader.bin as a stage 1 bootloader,
 and then load (and jump to) firmware.bin as stage 2.  Optionally, you can add
