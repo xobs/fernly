@@ -25,13 +25,14 @@ static const uint32_t fb_bpp = 2;
  * explicitly later on.
  *    [slot] is the order to execute.
  */
-static void lcd_cmd_slot(uint16_t cmd, uint8_t slot)
+enum lcd_slot_type {
+	SLOT_DATA = 0,
+	SLOT_CMD = 0x800000,
+};
+
+static void lcd_slot(enum lcd_slot_type type, uint16_t cmd, uint8_t slot)
 {
-	writel(cmd | 0x800000, LCD_CMD_LIST_ADDR + (slot * 4));
-}
-static void lcd_dat_slot(uint16_t dat, uint8_t slot)
-{
-	writel(dat, LCD_CMD_LIST_ADDR + (slot * 4));
+	writel(cmd | type, LCD_CMD_LIST_ADDR + (slot * 4));
 }
 
 static void lcd_setup_gpio(void)
@@ -202,9 +203,9 @@ static void lcd_fill_cmd_buffer(void)
 	int ncommands = 0;
 
 	/* Memory write */
-	lcd_cmd_slot(0x2c, ncommands++);
+	lcd_slot(SLOT_CMD, 0x2c, ncommands++);
 
-	/* Count the number of cmmands and add it to AUTOCOPY_CTRL */
+	/* Count the number of commands and add it to AUTOCOPY_CTRL */
 	writel((readl(LCD_AUTOCOPY_CTRL_REG)
 		& ~LCD_AUTOCOPY_CTRL_CMD_COUNT_MASK)
 		| ((ncommands - 1) << LCD_AUTOCOPY_CTRL_CMD_COUNT_SHIFT),

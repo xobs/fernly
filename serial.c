@@ -2,9 +2,11 @@
 #include "serial.h"
 #include "memio.h"
 
+#define FIFO_MAX 1
+
 #define SERIAL_USB
 
-#ifdef SERIAL_UART
+#if defined(SERIAL_UART)
 
 #define UART_IS_DLL 0x100
 #define UART_IS_LCR 0x200
@@ -46,17 +48,6 @@ enum uart_baudrate {
 };
 #define UART_BAUD_RATE UART_115200
 
-#if 0
-/* 26MHz clock input (used when no PLL initialized directly after poweron) */
-static const uint16_t divider[] = {
-	[UART_38400]    = 42,
-	[UART_57600]    = 28,
-	[UART_115200]   = 14,
-	[UART_230400]   = 7,
-	[UART_460800]   = 14,   /* would need UART_REG(HIGHSPEED) = 1 or 2 */
-	[UART_921600]   = 7,    /* would need UART_REG(HIGHSPEED) = 2 */
-};
-#else
 /* 52MHz clock input (after PLL init) */
 static const uint16_t divider[] = {
 	[UART_38400]    = 85,
@@ -66,7 +57,6 @@ static const uint16_t divider[] = {
 	[UART_460800]   = 7,
 	[UART_921600]   = 7,    /* would need UART_REG(HIGHSPEED) = 1 */
 };
-#endif
 
 static uint8_t uart_getreg(int regnum)
 {
@@ -110,6 +100,12 @@ uint8_t serial_getc(void)
 	return uart_getreg(UART_RBR);
 }
 
+/* Return true if there's pending received char */
+int serial_available(void)
+{
+	return uart_getreg(UART_LSR) & 0x01;
+}
+
 int serial_puts(const void *s)
 {
 	const char *str = s;
@@ -131,20 +127,20 @@ void serial_init(void)
 {
 	int tmp;
 
-	// Setup 8-N-1,(UART_WLS_8 | UART_NONE_PARITY | UART_1_STOP) = 0x03
+	/* Setup 8-N-1,(UART_WLS_8 | UART_NONE_PARITY | UART_1_STOP) = 0x03 */
 	uart_setreg(UART_LCR, 0x03);
 
-	// Set BaudRate 
-	// config by UART_BAUD_RATE(9:115200)
+	/* Set BaudRate 
+	 * config by UART_BAUD_RATE(9:115200)
+	 */
 	uart_setreg(UART_DLL, divider[UART_BAUD_RATE]&0xff);
 	uart_setreg(UART_DLH, divider[UART_BAUD_RATE]>>8);
 	uart_setreg(UART_LCR, 0x03);
 
-	// Enable Fifo, and Rx Trigger level = 16bytes, flush Tx, Rx fifo
-	// (UART_FCR_FIFOEN | UART_FCR_4Byte_Level | UART_FCR_RFR | UART_FCR_TFR) = 0x47
+	/* Enable Fifo, and Rx Trigger level = 16bytes, flush Tx, Rx fifo */
 	uart_setreg(UART_FCR, 0x47);
 
-	// DTR , RTS is on, data will be coming,Output2 is high
+	/* DTR , RTS is on, data will be coming, Output2 is high */
 	uart_setreg(UART_MCR, 0x03);
 
 	/* Set up normal interrupts */
@@ -153,7 +149,7 @@ void serial_init(void)
 	/* Pause a while */
 	for (tmp=0; tmp<0xff; tmp++);
 }
-#else /* SERIAL_USB */
+#elif defined(SERIAL_USB)
 
 #include "fernvale-usb.h"
 
@@ -289,6 +285,12 @@ uint8_t serial_getc(void)
 	return recv_bfr[recv_offset++];
 }
 
+int serial_available(void)
+{
+	usb_handle_irqs(1);
+	return recv_size != 0;
+}
+
 int serial_puts(const void *s)
 {
 	const char *str = s;
@@ -324,7 +326,7 @@ int serial_read(void *data, int bytes)
 
 void serial_init(void)
 {
-	send_max = 32;
+	send_max = FIFO_MAX;
 	send_cur = 0;
 
 	writel(readl(USB_CTRL_CON) | USB_CTRL_CON_NULLPKT_FIX, USB_CTRL_CON);
@@ -356,7 +358,6 @@ void serial_init(void)
 	writeb(USB_CTRL_EP_INCSR1_FLUSHFIFO, USB_CTRL_EP_INCSR1);
 
 	/* Set up FIFO to automatically transmit when the buffer is full */
-	//writeb(USB_CTRL_EP_INCSR2_AUTOSET, USB_CTRL_EP_INCSR2);
 	writeb(0, USB_CTRL_EP_INCSR2);
 
 	/* Set the USB mode to OUT, to ensure we receive packets from host */
@@ -367,4 +368,6 @@ void serial_init(void)
 	usb_handle_irqs(1);
 }
 
-#endif /* !SERIAL_UART */
+#else /* SERIAL_USB || SERIAL_UART */
+#error "No serial port defined!  Must define SERIAL_USB or SERIAL_UART"
+#endif /* SERIAL_USB || SERIAL_UART */

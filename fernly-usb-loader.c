@@ -14,7 +14,7 @@
 
 #include "sha1.h"
 
-#define BAUDRATE B921600
+#define BAUDRATE B115200
 #define STAGE_2_WRITE_ALL_AT_ONCE 1 /* Write stage 2 in one write() */
 #define STAGE_2_WRITE_SIZE 1
 #define STAGE_3_WRITE_ALL_AT_ONCE 1 /* Write stage 3 in one write() */
@@ -53,15 +53,17 @@ enum mtk_commands {
 	mtk_firmware_version = 0xff,
 };
 
+/* "general file header", struct gfh_header is actually a lead-in
+   for different header types (as specified by type field). */
 struct gfh_header {
-	uint32_t magic_ver;
-	uint16_t size;
-	uint16_t type;
+	uint32_t magic_ver; /* 'MMM', highest byte - version */
+	uint16_t size;      /* Total header size, incl. struct gfh_header */
+	uint16_t type;      /* 0 - gfh_file_info */
 };
 
 struct gfh_file_info {
 	struct gfh_header header;
-	uint8_t         id[12]; /* include '\0' */
+	uint8_t         id[12]; /* "FILE_INFO", zero-padded */
 	uint32_t        file_ver;
 	uint16_t        file_type;
 	uint8_t         flash_dev;
@@ -1173,8 +1175,7 @@ static int fernvale_write_stage3(int serfd, int binfd)
 }
 
 static void cmd_begin(const char *msg) {
-	printf(msg);
-	printf("... ");
+	printf("%s... ", msg);
 	fflush(stdout);
 }
 
@@ -1200,6 +1201,7 @@ static void print_help(const char *name)
 	printf("\n");
 	printf("Arguments:\n");
 	printf("    -l [logfile]      Log boot output to the specified file\n");
+	printf("    -w                Wait for serial port to appear\n");
 	printf("    -s                Enter boot shell\n");
 	printf("    -h                Print this help\n");
 	printf("\n");
@@ -1219,8 +1221,9 @@ int main(int argc, char **argv) {
 	uint32_t ret;
 	int opt;
 	int shell = 0;
+	int wait_serial = 0;
 
-	while ((opt = getopt(argc, argv, "hl:s")) != -1) {
+	while ((opt = getopt(argc, argv, "hl:sw")) != -1) {
 		switch(opt) {
 
 		case 'l':
@@ -1229,6 +1232,10 @@ int main(int argc, char **argv) {
 
 		case 's':
 			shell = 1;
+			break;
+
+		case 'w':
+			wait_serial = 1;
 			break;
 
 		default:
@@ -1248,10 +1255,27 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	serfd = open(argv[1], O_RDWR);
-	if (-1 == serfd) {
-		perror("Unable to open serial port");
-		exit(1);
+	if (wait_serial) {
+		printf("Waiting for serial port to connect: .");
+		fflush(stdout);
+	}
+	while (1) {
+		serfd = open(argv[1], O_RDWR);
+		if (-1 == serfd) {
+			if (wait_serial) {
+				printf(".");
+				fflush(stdout);
+				sleep(1);
+				continue;
+			} else {
+				perror("Unable to open serial port");
+				exit(1);
+			}
+		}
+		break;
+	}
+	if (wait_serial) {
+		printf("\n");
 	}
 
 	s1blfd = open(argv[2], O_RDONLY);

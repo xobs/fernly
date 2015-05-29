@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include "serial.h"
 #include "printf.h"
 #include "irq.h"
@@ -130,7 +131,7 @@ void irq_dispatch(void)
 	printf("Dispatching IRQs...\n");
 	reg = IRQ_BASE + IRQ_STATUS_OFF;
 	val = readl(reg);
-	printf("Lower Mask: 0x%08x\n", val);
+	printf("Lower Mask: 0x%08"PRIx32"\n", val);
 
 	for (i = 0; i < 32; i++)
 		if (val & (1 << i))
@@ -138,7 +139,7 @@ void irq_dispatch(void)
 
 	reg += IRQ_BASE + IRQ_STATUS_OFF + 4;
 	val = readl(reg);
-	printf("Upper Mask: 0x%08x\n", val);
+	printf("Upper Mask: 0x%08"PRIx32"\n", val);
 	for (i = 0; i < (__irq_max__ - 32); i++)
 		if (val & (1 << i))
 			irq_dispatch_one(32 + i);

@@ -36,7 +36,7 @@ int serial_print_hex_offset(const void *block, int count, int offset)
 	count += offset;
 	b -= offset;
 	for ( ; offset < count; offset += 16) {
-		serial_puth(offset, 8);
+		serial_puth((uint32_t)b + offset, 8);
 
 		for (byte = 0; byte < 16; byte++) {
 			if (byte == 8)

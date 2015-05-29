@@ -92,6 +92,23 @@ That is, send the following packet:
 | 00 00 |
 
 
+Licensing
+---------
+
+Fernly is licensed under the BSD 2-clause license (see LICENSE).
+
+Previous versions of fernly linked against division libraries taken from U-Boot,
+which were licensed under GPL-2.  These files have been removed.
+
+Instead, we supply a version of libgcc.a.  This file was extracted from a
+standard gcc toolchain, specifically:
+
+    https://code.google.com/p/yus-repo/downloads/detail?name=arm-none-eabi-4.6-armv5.tar.gz
+
+It has not been modified, and its distribution here should be covered under
+the "runtime exception".
+
+
 Memory Map
 ----------
 
@@ -171,3 +188,4 @@ Memory Map
 | 0xa0910000 | ?????????? | ?????????? | ??????????????????????????????????? |
 | 0xa0920000 | ?????????? | ?????????? | AHB DMA block                       |
 | 0xa3300000 | 0xa33a0000 | ?????????? | Bluetooth things                    |
+| 0xfff00000 | 0xffffffff |   0x100000 | Boot ROM, mirrored each 64K (its real size) |
