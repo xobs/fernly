@@ -61,6 +61,7 @@ int cmd_keypad(int argc, char **argv)
 
 	printf("Press %c on keypad or any key on serial to exit\n",
 		key_vals[ARRAY_SIZE(key_vals) - 2]);
+
 	while (!end && !serial_available()) {
 		int key;
 
@@ -71,6 +72,8 @@ int cmd_keypad(int argc, char **argv)
 			if (newstate && !key_state[key]) {
 				serial_putc(key_vals[key]);
 				if (key == (ARRAY_SIZE(key_vals) - 2))
+					end = 1;
+				if (argc)
 					end = 1;
 			}
 			key_state[key] = newstate;		
