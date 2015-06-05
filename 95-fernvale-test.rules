@@ -1,0 +1,2 @@
+ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="0e8d", ATTRS{idProduct}=="0003", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0e8d", ATTRS{idProduct}=="0003", SYMLINK+="fernvale", MODE="0660", RUN+="/home/fernvale/fernly-usb-loader -t /dev/fernvale /home/fernvale/usb-loader.bin /home/fernvale/firmware.bin"
