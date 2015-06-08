@@ -63,21 +63,21 @@ struct gfh_header {
 
 struct gfh_file_info {
 	struct gfh_header header;
-	uint8_t         id[12]; /* "FILE_INFO", zero-padded */
-	uint32_t        file_ver;
-	uint16_t        file_type;
-	uint8_t         flash_dev;
-	uint8_t         sig_type;
-	uint32_t        load_addr;
-	uint32_t        file_len;
-	uint32_t        max_size;
-	uint32_t        content_offset;
-	uint32_t        sig_len;
-	uint32_t        jump_offset;
-	uint32_t        attr;
+	uint8_t		id[12]; /* "FILE_INFO", zero-padded */
+	uint32_t	file_ver;
+	uint16_t	file_type;
+	uint8_t		flash_dev;
+	uint8_t		sig_type;
+	uint32_t	load_addr;
+	uint32_t	file_len;
+	uint32_t	max_size;
+	uint32_t	content_offset;
+	uint32_t	sig_len;
+	uint32_t	jump_offset;
+	uint32_t	attr;
 };
 
-static const uint8_t mtk_banner[]          = { 0xa0, 0x0a, 0x50, 0x05 };
+static const uint8_t mtk_banner[]	   = { 0xa0, 0x0a, 0x50, 0x05 };
 static const uint8_t mtk_banner_response[] = { 0x5f, 0xf5, 0xaf, 0xfa };
 
 static void restore_termios(void)
@@ -455,22 +455,22 @@ int fernvale_send_bootloader(int fd, uint32_t addr, uint32_t stack,
 		info->file_len = size;
 	}
 #endif
-        printf("Id: ");
+	printf("Id: ");
 	int j;
-        for (j = 0; j < 12; j++)
-                printf("%c", info->id[j]);
-        printf("\n");
-        printf("Version: %d\n", info->file_ver);
-        printf("Type: %d\n", info->file_type);
-        printf("Flash device: %d\n", info->flash_dev);
-        printf("File size: %d\n", info->file_len);
-        printf("Max size: %d\n", info->max_size);
-        printf("Signature type: %d\n", info->sig_type);
-        printf("Signature length: %d\n", info->sig_len);
-        printf("Load address: 0x%08x\n", info->load_addr);
-        printf("Content offset: %d\n", info->content_offset);
-        printf("Jump offset: %d\n", info->jump_offset);
-        printf("Attributes: %d\n", info->attr);
+	for (j = 0; j < 12; j++)
+		printf("%c", info->id[j]);
+	printf("\n");
+	printf("Version: %d\n", info->file_ver);
+	printf("Type: %d\n", info->file_type);
+	printf("Flash device: %d\n", info->flash_dev);
+	printf("File size: %d\n", info->file_len);
+	printf("Max size: %d\n", info->max_size);
+	printf("Signature type: %d\n", info->sig_type);
+	printf("Signature length: %d\n", info->sig_len);
+	printf("Load address: 0x%08x\n", info->load_addr);
+	printf("Content offset: %d\n", info->content_offset);
+	printf("Jump offset: %d\n", info->jump_offset);
+	printf("Attributes: %d\n", info->attr);
 
 	printf("Hash:\n");
 	print_hex(bfr + size - info->sig_len, info->sig_len, 0);
@@ -929,19 +929,19 @@ int fernvale_set_serial(int serfd) {
 	int ret;
 	struct termios t;
 
-        ret = tcgetattr(serfd, &t);
-        if (-1 == ret) {
-                perror("Failed to get attributes");
-                exit(1);
-        }
-        cfsetispeed(&t, BAUDRATE);
-        cfsetospeed(&t, BAUDRATE);
+	ret = tcgetattr(serfd, &t);
+	if (-1 == ret) {
+		perror("Failed to get attributes");
+		exit(1);
+	}
+	cfsetispeed(&t, BAUDRATE);
+	cfsetospeed(&t, BAUDRATE);
 	cfmakeraw(&t);
-        ret = tcsetattr(serfd, TCSANOW, &t);
-        if (-1 == ret) {
-                perror("Failed to set attributes");
-                exit(1);
-        }
+	ret = tcsetattr(serfd, TCSANOW, &t);
+	if (-1 == ret) {
+		perror("Failed to set attributes");
+		exit(1);
+	}
 
 	return 0;
 }
@@ -1215,107 +1215,107 @@ static uint32_t chr_to_keymask(uint8_t c) {
 }
 
 static void  putpixel(uint16_t *s, uint32_t x, uint32_t y, uint16_t c) {
-        if (x > 240)
-                return;
-        if (y > 320)
-                return;
-        s[y * 240 + x] = c;
+	if (x > 240)
+		return;
+	if (y > 320)
+		return;
+	s[y * 240 + x] = c;
 }
 
 static void draw_circle(uint16_t *screen, int x, int y, int radius, uint16_t color) {
-        int a, b, P;
+	int a, b, P;
 
-        // Calculate intermediates
-        a = 1;
-        b = radius;
-        P = 4 - radius;
+	// Calculate intermediates
+	a = 1;
+	b = radius;
+	P = 4 - radius;
 
-        // Away we go using Bresenham's circle algorithm
-        // Optimized to prevent double drawing
-        putpixel(screen, x, y + b, color);
-        putpixel(screen, x, y - b, color);
-        putpixel(screen, x + b, y, color);
-        putpixel(screen, x - b, y, color);
-        do {
-                putpixel(screen, x + a, y + b, color);
-                putpixel(screen, x + a, y - b, color);
-                putpixel(screen, x + b, y + a, color);
-                putpixel(screen, x - b, y + a, color);
-                putpixel(screen, x - a, y + b, color);
-                putpixel(screen, x - a, y - b, color);
-                putpixel(screen, x + b, y - a, color);
-                putpixel(screen, x - b, y - a, color);
-                if (P < 0)
-                        P += 3 + 2*a++;
-                else
-                        P += 5 + 2*(a++ - b--);
-        } while(a < b);
-        putpixel(screen, x + a, y + b, color);
-        putpixel(screen, x + a, y - b, color);
-        putpixel(screen, x - a, y + b, color);
-        putpixel(screen, x - a, y - b, color);
+	// Away we go using Bresenham's circle algorithm
+	// Optimized to prevent double drawing
+	putpixel(screen, x, y + b, color);
+	putpixel(screen, x, y - b, color);
+	putpixel(screen, x + b, y, color);
+	putpixel(screen, x - b, y, color);
+	do {
+		putpixel(screen, x + a, y + b, color);
+		putpixel(screen, x + a, y - b, color);
+		putpixel(screen, x + b, y + a, color);
+		putpixel(screen, x - b, y + a, color);
+		putpixel(screen, x - a, y + b, color);
+		putpixel(screen, x - a, y - b, color);
+		putpixel(screen, x + b, y - a, color);
+		putpixel(screen, x - b, y - a, color);
+		if (P < 0)
+			P += 3 + 2*a++;
+		else
+			P += 5 + 2*(a++ - b--);
+	} while(a < b);
+	putpixel(screen, x + a, y + b, color);
+	putpixel(screen, x + a, y - b, color);
+	putpixel(screen, x - a, y + b, color);
+	putpixel(screen, x - a, y - b, color);
 }
 
 static void draw_circle_filled(uint16_t *s, int x, int y, int r, uint16_t c) {
-        int i;
+	int i;
 
-        for (i = 0; i < r; i++)
-                draw_circle(s, x, y, i, c);
+	for (i = 0; i < r; i++)
+		draw_circle(s, x, y, i, c);
 }
 
 static void draw_button(uint16_t *s, int x, int y, int c, uint32_t keymask, uint8_t k) {
-        if (keymask & chr_to_keymask(k))
-                draw_circle_filled(s, x, y, 16, c);
-        else
-                draw_circle(s, x, y, 16, c);
+	if (keymask & chr_to_keymask(k))
+		draw_circle_filled(s, x, y, 16, c);
+	else
+		draw_circle(s, x, y, 16, c);
 }
 
 static void update_screen_bitmap(uint16_t *screen, uint32_t keymask) {
 
-        int i;
-        uint16_t color = 0xffff;
+	int i;
+	uint16_t color = 0xffff;
 
-        memset(screen, 0, 320 * 240 * 2);
+	memset(screen, 0, 320 * 240 * 2);
 
-        draw_button(screen, 64, 32, color, keymask, 'A');
-        draw_button(screen, 192, 32, color, keymask, 'B');
+	draw_button(screen, 64, 32, color, keymask, 'A');
+	draw_button(screen, 192, 32, color, keymask, 'B');
 
-        draw_button(screen, 128, 64 + 8, color, keymask, 'U');
-        draw_button(screen, 64,  80 + 8, color, keymask, 'L');
-        draw_button(screen, 192, 80 + 8, color, keymask, 'R');
-        draw_button(screen, 128, 96 + 8, color, keymask, 'D');
+	draw_button(screen, 128, 64 + 8, color, keymask, 'U');
+	draw_button(screen, 64,  80 + 8, color, keymask, 'L');
+	draw_button(screen, 192, 80 + 8, color, keymask, 'R');
+	draw_button(screen, 128, 96 + 8, color, keymask, 'D');
 
-        draw_button(screen, 64,  128 + 16, color, keymask, '1');
-        draw_button(screen, 128, 128 + 16, color, keymask, '2');
-        draw_button(screen, 196, 128 + 16, color, keymask, '3');
+	draw_button(screen, 64,  128 + 16, color, keymask, '1');
+	draw_button(screen, 128, 128 + 16, color, keymask, '2');
+	draw_button(screen, 196, 128 + 16, color, keymask, '3');
 
-        draw_button(screen, 64,  176 + 16, color, keymask, '4');
-        draw_button(screen, 128, 176 + 16, color, keymask, '5');
-        draw_button(screen, 196, 176 + 16, color, keymask, '6');
+	draw_button(screen, 64,  176 + 16, color, keymask, '4');
+	draw_button(screen, 128, 176 + 16, color, keymask, '5');
+	draw_button(screen, 196, 176 + 16, color, keymask, '6');
 
-        draw_button(screen, 64,  224 + 16, color, keymask, '7');
-        draw_button(screen, 128, 224 + 16, color, keymask, '8');
-        draw_button(screen, 196, 224 + 16, color, keymask, '9');
+	draw_button(screen, 64,  224 + 16, color, keymask, '7');
+	draw_button(screen, 128, 224 + 16, color, keymask, '8');
+	draw_button(screen, 196, 224 + 16, color, keymask, '9');
 
-        draw_button(screen, 64,  272 + 16, color, keymask, '*');
-        draw_button(screen, 128, 272 + 16, color, keymask, '0');
-        draw_button(screen, 196, 272 + 16, color, keymask, '#');
+	draw_button(screen, 64,  272 + 16, color, keymask, '*');
+	draw_button(screen, 128, 272 + 16, color, keymask, '0');
+	draw_button(screen, 196, 272 + 16, color, keymask, '#');
 }
 
 static void draw_bitmap_to_screen(int serfd, void *bitmap, int size) {
 	char cmd[128];
 	uint32_t count;
 
-        fernvale_wait_banner(serfd, prompt, strlen(prompt));
-        count = snprintf(cmd, sizeof(cmd) - 1, "load 0x40000 %d\n", size);
-        write(serfd, cmd, count);
-        read(serfd, cmd, count);
-        write(serfd, bitmap, size);
+	fernvale_wait_banner(serfd, prompt, strlen(prompt));
+	count = snprintf(cmd, sizeof(cmd) - 1, "load 0x40000 %d\n", size);
+	write(serfd, cmd, count);
+	read(serfd, cmd, count);
+	write(serfd, bitmap, size);
 
-        fernvale_wait_banner(serfd, prompt, strlen(prompt));
-        count = snprintf(cmd, sizeof(cmd) - 1, "lcd run\n");
-        write(serfd, cmd, count);
-        read(serfd, cmd, count);
+	fernvale_wait_banner(serfd, prompt, strlen(prompt));
+	count = snprintf(cmd, sizeof(cmd) - 1, "lcd run\n");
+	write(serfd, cmd, count);
+	read(serfd, cmd, count);
 }
 
 static void do_factory_test(int serfd) {
@@ -1323,7 +1323,7 @@ static void do_factory_test(int serfd) {
 	uint32_t count;
 	int ret;
 	struct termios t;
-        int light_is_on = 1;
+	int light_is_on = 1;
 
 	/*
 	ret = tcgetattr(serfd, &t);
@@ -1355,15 +1355,15 @@ static void do_factory_test(int serfd) {
 
 	test_begin("Keypad");
 	{
-                uint16_t screen_bitmap[320 * 240];
-                memset(screen_bitmap, 0, sizeof(screen_bitmap));
+		uint16_t screen_bitmap[320 * 240];
+		memset(screen_bitmap, 0, sizeof(screen_bitmap));
 
 		uint32_t keymask = 0x3ffff;
 		int needs_to_rerun = 1;
 		uint8_t c;
 
-                update_screen_bitmap(screen_bitmap, keymask);
-                draw_bitmap_to_screen(serfd, screen_bitmap, sizeof(screen_bitmap));
+		update_screen_bitmap(screen_bitmap, keymask);
+		draw_bitmap_to_screen(serfd, screen_bitmap, sizeof(screen_bitmap));
 		while (keymask) {
 
 			if (needs_to_rerun) {
@@ -1371,34 +1371,34 @@ static void do_factory_test(int serfd) {
 				count = snprintf(cmd, sizeof(cmd) - 1, "keypad 1\n");
 				write(serfd, cmd, count);
 				read(serfd, cmd, count);
-//				printf("Getting command back: ");
+	//				printf("Getting command back: ");
 				fflush(stdout);
 				do {
 					ret = read(serfd, cmd, 1);
-//					printf("%c [%x] %d", cmd[0], cmd[0], ret);
+	//					printf("%c [%x] %d", cmd[0], cmd[0], ret);
 					//printf("%c", cmd[0]);
 					fflush(stdout);
 				} while ((ret == 1) && (cmd[0] != '\n'));
 
-//				printf("\n\nWaiting for first message: ");
+	//				printf("\n\nWaiting for first message: ");
 				fflush(stdout);
 				do {
 					ret = read(serfd, cmd, 1);
-//					printf("%c [%x] %d", cmd[0], cmd[0], ret);
+	//					printf("%c [%x] %d", cmd[0], cmd[0], ret);
 					//printf("%c", cmd[0]);
-//					fflush(stdout);
+	//					fflush(stdout);
 				} while ((ret == 1) && (cmd[0] != '\n'));
 
-//				printf("\n\nWaiting for second message: ");
+	//				printf("\n\nWaiting for second message: ");
 				fflush(stdout);
 				do {
 					ret = read(serfd, cmd, 1);
-//					printf("%c [%x] %d", cmd[0], cmd[0], ret);
+	//					printf("%c [%x] %d", cmd[0], cmd[0], ret);
 					//printf("%c", cmd[0]);
-//					fflush(stdout);
+	//					fflush(stdout);
 				} while ((ret == 1) && (cmd[0] != '\n'));
 
-//				printf("\n\nMonitoring keypresses\n");
+	//				printf("\n\nMonitoring keypresses\n");
 				needs_to_rerun = 0;
 			}
 
@@ -1419,16 +1419,16 @@ static void do_factory_test(int serfd) {
 				write(serfd, cmd, 1);
 			}
 
-                        update_screen_bitmap(screen_bitmap, keymask);
-                        draw_bitmap_to_screen(serfd, screen_bitmap, sizeof(screen_bitmap));
+			update_screen_bitmap(screen_bitmap, keymask);
+			draw_bitmap_to_screen(serfd, screen_bitmap, sizeof(screen_bitmap));
 
-                        if (light_is_on) {
-                                fernvale_wait_banner(serfd, prompt, strlen(prompt));
-                                count = snprintf(cmd, sizeof(cmd) - 1, "led 0\n");
-                                write(serfd, cmd, count);
-                                read(serfd, cmd, count);
-                                light_is_on = 0;
-                        }
+			if (light_is_on) {
+				fernvale_wait_banner(serfd, prompt, strlen(prompt));
+				count = snprintf(cmd, sizeof(cmd) - 1, "led 0\n");
+				write(serfd, cmd, count);
+				read(serfd, cmd, count);
+				light_is_on = 0;
+			}
 		}
 		/* Exit test */
 		count = snprintf(cmd, sizeof(cmd) - 1, "\n");
