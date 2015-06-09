@@ -27,9 +27,9 @@ if($header=~m/^P[36]/)
     {
       foreach(0 .. ($xsize-1))
       {
-        my $r=($header eq "P6")?getc(IN):<IN>; $r>>=3;
-        my $g=($header eq "P6")?getc(IN):<IN>; $g>>=2;
-        my $b=($header eq "P6")?getc(IN):<IN>; $b>>=3;
+        my $r=($header eq "P6")?unpack("C",getc(IN)):<IN>; $r>>=3;
+        my $g=($header eq "P6")?unpack("C",getc(IN)):<IN>; $g>>=2;
+        my $b=($header eq "P6")?unpack("C",getc(IN)):<IN>; $b>>=3;
 
         my $p1=(($g&7)<<5) | ($b);
         my $p2=($r<<3) | ($g>>3);
