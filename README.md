@@ -121,6 +121,11 @@ Memory Map
 | 0x80000000 | 0x80000008 |       0x08 | Config block (chip version, etc.)   |
 | 0x82000000 | 0x82d00000 | ?????????? | Modem system stuff                  |
 | 0x83000000 | 0xa3090000 | ?????????? | Modem peripheral stuff              |
+| 0x83020000 |            |            | TDMA unit                           |
+| 0x83050000 |            |            | Frame Check Sequence unit           |
+| 0x83060000 |            |            | GPRS cipher unit                    |
+| 0x83070000 |            |            | Baseband serial interface           |
+| 0x83080000 |            |            | Baseband parallel interface         |
 | 0xa0000000 | 0xa0000008 |       0x08 | Config block (mirror?)              |
 | 0xa0010000 | ?????????? | ?????????? | Power, config block                 |
 | 0xa0020000 | 0xa0020e10 |     0x0e10 | GPIO control block                  |
@@ -141,7 +146,7 @@ Memory Map
 | 0xa00e0000 | 0xa00e0008 |       0x0c | PWM1 block                          |
 | 0xa00f0000 | 0xa00f00b0 |       0xb0 | SIM1 interface block                |
 | 0xa0100000 | 0xa01000b0 |       0xb0 | SIM2 interface block                |
-| 0xa0110000 | ?????????? | ?????????? | ??????????????????????????????????? |
+| 0xa0110000 | ?????????? | ?????????? | SEJ/CHE (Security engine) block     |
 | 0xa0120000 | 0xa0120074 |       0x74 | I2C block                           |
 | 0xa0130000 | 0xa0130098 |       0x98 | SD1 block (MSDC)                    |
 | 0xa0140000 | ?????????? | ?????????? | Serial flash block                  |
