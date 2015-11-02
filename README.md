@@ -37,6 +37,15 @@ This will open up /dev/fernvale, load usb-loader.bin as a stage 1 bootloader,
 and then load (and jump to) firmware.bin as stage 2.  Optionally, you can add
 a stage 3 file by specifying it as an additional argument.
 
+Many 3rd-party devices enter bootloader mode only for a short window (~1s)
+after being connected to USB. A device almost certainly should be "off". Some
+devices require that battery is removed, while some - don't. To accommodate
+such cases, there's -w (wait) option. Run fernly-usb-loader, and only
+then connect a device to USB. This will allow to try various combinations
+mentioned above with greater comfort (you need to disconnect and poweroff
+device after each try, and restart fernly-usb-loader).
+
+    ./build/fernly-usb-loader -w -s /dev/ttyUSB0 ./build/usb-loader.bin ./build/firmware.bin
 
 Linux Notes
 -----------
