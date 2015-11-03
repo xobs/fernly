@@ -100,6 +100,8 @@ That is, send the following packet:
 
 | 00 00 |
 
+See ROM-BACKUP.txt for user-level instructions how to backup/restore
+FlashROM of your device.
 
 Licensing
 ---------

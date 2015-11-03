@@ -1,0 +1,41 @@
+Fernly doesn't require changing a firmware stored in FlashROM of
+your device - it runs completely from RAM. You may still want
+to backup the original firmware for various reasons. Following
+gives a walkthru how to do this.
+
+1. Check out the latest flashrom HEAD:
+
+svn co http://code.coreboot.org/svn/flashrom/trunk flashrom
+
+Using latest HEAD is recommended, as it may have more chip definitions,
+and there's less chance it won't recognize your FlashROM.
+
+2. Apply flashrom-fernvale.patch from fernly:
+
+patch -p0 <flashrom-fernvale.patch
+
+3. You may need to install libusb-0.1 development headers to build it
+(0.1 is "old" libusb, many projects use modern 1.0 version). For ubuntu:
+
+apt-get install libusb-dev
+
+4. Build with:
+
+make WARNERROR=no
+
+5. Start fernly without "-s" (shell) switch:
+
+./build/fernly-usb-loader -w /dev/ttyUSB0 ./build/usb-loader.bin ./build/firmware.bin
+
+6. Run flashrom to dump device FlashROM to a file:
+
+./flashrom --programmer fernvale_spi:dev=/dev/ttyUSB0 --read flash.dat
+
+If you're unlucky, it may report that it cannot recognize your device has
+a ROM it can't recognize. If so, follow flashrom documentation on what to do.
+
+Otherwise, expect that reading 16MB of flash to take up to 10 minutes -
+without any progress indicator or something.
+
+7. Refer to flashrom documentation for writing (generally it's as simple
+as giving --write option instead of --read).
